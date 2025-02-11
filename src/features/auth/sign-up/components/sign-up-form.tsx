@@ -1,9 +1,10 @@
-import { HTMLAttributes, useState } from 'react'
+import { HTMLAttributes } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { IconBrandFacebook, IconBrandGithub } from '@tabler/icons-react'
 import { cn } from '@/lib/utils'
+import { useRegister } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -29,10 +30,11 @@ const formSchema = z
       .min(1, {
         message: 'Please enter your password',
       })
-      .min(7, {
-        message: 'Password must be at least 7 characters long',
+      .min(5, {
+        message: 'Password must be at least 5 characters long',
       }),
     confirmPassword: z.string(),
+    registerCode: z.string().min(1, { message: 'Register code is required' })
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match.",
@@ -40,25 +42,32 @@ const formSchema = z
   })
 
 export function SignUpForm({ className, ...props }: SignUpFormProps) {
-  const [isLoading, setIsLoading] = useState(false)
-
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<z.infer<typeof formSchema>>({    
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: '',
       password: '',
       confirmPassword: '',
+      registerCode: ''
     },
   })
 
-  function onSubmit(data: z.infer<typeof formSchema>) {
-    setIsLoading(true)
-    // eslint-disable-next-line no-console
-    console.log(data)
+  const register = useRegister()
+  const isLoading = register.isPending
 
-    setTimeout(() => {
-      setIsLoading(false)
-    }, 3000)
+  async function onSubmit(data: z.infer<typeof formSchema>) {
+    try {
+      await register.mutateAsync({
+        email: data.email,
+        password: data.password,
+        register_code: data.registerCode
+      })
+    } catch (error) {
+      form.setError('root', {
+        type: 'manual',
+        message: error instanceof Error ? error.message : 'Registration failed',
+      })
+    }
   }
 
   return (
@@ -100,6 +109,19 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
                   <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
                     <PasswordInput placeholder='********' {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name='registerCode'
+              render={({ field }) => (
+                <FormItem className='space-y-1'>
+                  <FormLabel>Register Code</FormLabel>
+                  <FormControl>
+                    <Input placeholder='Enter register code' {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

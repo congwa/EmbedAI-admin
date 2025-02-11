@@ -1,10 +1,11 @@
-import { HTMLAttributes, useState } from 'react'
+import { HTMLAttributes } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link } from '@tanstack/react-router'
 import { IconBrandFacebook, IconBrandGithub } from '@tabler/icons-react'
 import { cn } from '@/lib/utils'
+import { useLogin } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -29,14 +30,12 @@ const formSchema = z.object({
     .min(1, {
       message: 'Please enter your password',
     })
-    .min(7, {
-      message: 'Password must be at least 7 characters long',
+    .min(5, {
+      message: 'Password must be at least 5 characters long',
     }),
 })
 
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
-  const [isLoading, setIsLoading] = useState(false)
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -45,14 +44,21 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     },
   })
 
-  function onSubmit(data: z.infer<typeof formSchema>) {
-    setIsLoading(true)
-    // eslint-disable-next-line no-console
-    console.log(data)
+  const login = useLogin()
+  const isLoading = login.isPending
 
-    setTimeout(() => {
-      setIsLoading(false)
-    }, 3000)
+  async function onSubmit(data: z.infer<typeof formSchema>) {
+    try {
+      await login.mutateAsync({
+        email: data.email,
+        password: data.password,
+      })
+    } catch (error) {
+      form.setError('root', {
+        type: 'manual',
+        message: error instanceof Error ? error.message : 'Login failed',
+      })
+    }
   }
 
   return (

@@ -1,13 +1,11 @@
-import Cookies from 'js-cookie'
 import { create } from 'zustand'
-
-const ACCESS_TOKEN = 'thisisjustarandomstring'
+import { persist, createJSONStorage } from 'zustand/middleware'
 
 interface AuthUser {
-  accountNo: string
+  id: number
   email: string
-  role: string[]
-  exp: number
+  is_admin: boolean
+  created_at: string
 }
 
 interface AuthState {
@@ -21,35 +19,40 @@ interface AuthState {
   }
 }
 
-export const useAuthStore = create<AuthState>()((set) => {
-  const cookieState = Cookies.get(ACCESS_TOKEN)
-  const initToken = cookieState ? JSON.parse(cookieState) : ''
-  return {
-    auth: {
-      user: null,
-      setUser: (user) =>
-        set((state) => ({ ...state, auth: { ...state.auth, user } })),
-      accessToken: initToken,
-      setAccessToken: (accessToken) =>
-        set((state) => {
-          Cookies.set(ACCESS_TOKEN, JSON.stringify(accessToken))
-          return { ...state, auth: { ...state.auth, accessToken } }
-        }),
-      resetAccessToken: () =>
-        set((state) => {
-          Cookies.remove(ACCESS_TOKEN)
-          return { ...state, auth: { ...state.auth, accessToken: '' } }
-        }),
-      reset: () =>
-        set((state) => {
-          Cookies.remove(ACCESS_TOKEN)
-          return {
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      auth: {
+        user: null,
+        setUser: (user) =>
+          set((state) => ({ ...state, auth: { ...state.auth, user } })),
+        accessToken: '',
+        setAccessToken: (accessToken) =>
+          set((state) => ({ ...state, auth: { ...state.auth, accessToken } })),
+        resetAccessToken: () =>
+          set((state) => ({
+            ...state,
+            auth: { ...state.auth, accessToken: '', user: null },
+          })),
+        reset: () =>
+          set((state) => ({
             ...state,
             auth: { ...state.auth, user: null, accessToken: '' },
-          }
-        }),
-    },
-  }
-})
+          })),
+      },
+    }),
+    {
+      name: 'auth-storage',
+      storage: createJSONStorage(() => localStorage),
+      version: 1,
+      partialize: (state) => ({
+        auth: {
+          user: state.auth.user,
+          accessToken: state.auth.accessToken,
+        },
+      }),
+    }
+  )
+)
 
-// export const useAuth = () => useAuthStore((state) => state.auth)
+export const useAuth = () => useAuthStore((state) => state.auth)
