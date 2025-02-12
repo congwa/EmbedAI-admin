@@ -1,46 +1,55 @@
-import { Header } from '@/components/layout/header'
-import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
-import { columns } from './components/users-columns'
-import { UsersDialogs } from './components/users-dialogs'
-import { UsersPrimaryButtons } from './components/users-primary-buttons'
-import { UsersTable } from './components/users-table'
-import UsersProvider from './context/users-context'
-import { userListSchema } from './data/schema'
-import { users } from './data/users'
+'use client'
 
-export default function Users() {
-  // Parse user list
-  const userList = userListSchema.parse(users)
+import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
+import { adminService } from '@/services/admin'
+import { useAuth } from '@/stores/authStore'
+import { CreateUserDialog } from './components/create-user-dialog'
+import { UsersTable } from './components/users-table'
+import { Pagination } from './components/pagination'
+
+export default function UsersPage() {
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  const [page, setPage] = useState(1)
+  const pageSize = 10
+
+  // 检查是否是管理员
+  useEffect(() => {
+    if (!user?.is_admin) {
+      navigate({ to: '/' })
+    }
+  }, [user, navigate])
+
+  // 获取用户列表
+  const { data: usersData, refetch } = useQuery({
+    queryKey: ['users', page, pageSize],
+    queryFn: () => adminService.getUsers(page, pageSize),
+    enabled: !!user?.is_admin, // 只有管理员才能获取数据
+  })
+
+  if (!user?.is_admin) {
+    return null
+  }
 
   return (
-    <UsersProvider>
-      <Header fixed>
-        <Search />
-        <div className='ml-auto flex items-center space-x-4'>
-          <ThemeSwitch />
-          <ProfileDropdown />
-        </div>
-      </Header>
+    <div className="container mx-auto py-10">
+      <div className="flex justify-between items-center mb-8">
+        <h2 className="text-3xl font-bold tracking-tight">用户管理</h2>
+        <CreateUserDialog onSuccess={refetch} />
+      </div>
 
-      <Main>
-        <div className='mb-2 flex flex-wrap items-center justify-between space-y-2'>
-          <div>
-            <h2 className='text-2xl font-bold tracking-tight'>User List</h2>
-            <p className='text-muted-foreground'>
-              Manage your users and their roles here.
-            </p>
-          </div>
-          <UsersPrimaryButtons />
-        </div>
-        <div className='-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-x-12 lg:space-y-0'>
-          <UsersTable data={userList} columns={columns} />
-        </div>
-      </Main>
+      {usersData?.data.items && <UsersTable users={usersData.data.items} />}
 
-      <UsersDialogs />
-    </UsersProvider>
+      {usersData?.data.pagination && (
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={usersData.data.pagination.total}
+          onPageChange={setPage}
+        />
+      )}
+    </div>
   )
 }

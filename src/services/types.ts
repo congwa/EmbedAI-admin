@@ -33,6 +33,13 @@ export interface AdminLoginRequest {
   password: string;
 }
 
+export interface User {
+  id: number;
+  email: string;
+  is_admin: boolean;
+  created_at: string;
+}
+
 // 登录响应数据
 export interface LoginResponse {
   access_token: string;
@@ -87,4 +94,15 @@ export interface GetDocumentsQuery {
   knowledge_base_id: number;
   skip?: number;
   limit?: number;
+}
+
+// 修改密码请求参数
+export interface UpdatePasswordRequest {
+  old_password: string
+  new_password: string
+}
+
+// 管理员修改用户密码请求参数
+export interface AdminChangeUserPasswordRequest {
+  new_password: string
 }

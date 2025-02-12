@@ -15,8 +15,8 @@ export function useLogin() {
     onSuccess: (response) => {
       if (response.success) {
         const { access_token, user } = response.data
-        useAuthStore.getState().auth.setAccessToken(access_token)
-        useAuthStore.getState().auth.setUser(user)
+        useAuthStore.getState().setAccessToken(access_token)
+        useAuthStore.getState().setUser(user)
         localStorage.setItem('token', access_token)
         navigate({ to: '/' })
       }

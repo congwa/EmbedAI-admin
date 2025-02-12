@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, ChevronDown } from 'lucide-react'
 import {
   Collapsible,
   CollapsibleContent,
@@ -27,15 +27,29 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu'
 import { NavCollapsible, NavItem, NavLink, type NavGroup } from './types'
+import { useAuth } from '@/stores/authStore'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 export function NavGroup({ title, items }: NavGroup) {
   const { state } = useSidebar()
   const href = useLocation({ select: (location) => location.href })
+  const { isAdmin } = useAuth()
+
+  // 过滤需要管理员权限的菜单项
+  const filteredItems = items.filter(item => {
+    if (item.adminOnly) {
+      return isAdmin
+    }
+    return true
+  })
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>{title}</SidebarGroupLabel>
       <SidebarMenu>
-        {items.map((item) => {
+        {filteredItems.map((item) => {
           const key = `${item.title}-${item.url}`
 
           if (!item.items)
@@ -84,6 +98,16 @@ const SidebarMenuCollapsible = ({
   href: string
 }) => {
   const { setOpenMobile } = useSidebar()
+  const { isAdmin } = useAuth()
+
+  // 过滤需要管理员权限的子菜单项
+  const filteredItems = item.items.filter(subItem => {
+    if (subItem.adminOnly) {
+      return isAdmin
+    }
+    return true
+  })
+
   return (
     <Collapsible
       asChild
@@ -101,7 +125,7 @@ const SidebarMenuCollapsible = ({
         </CollapsibleTrigger>
         <CollapsibleContent className='CollapsibleContent'>
           <SidebarMenuSub>
-            {item.items.map((subItem) => (
+            {filteredItems.map((subItem) => (
               <SidebarMenuSubItem key={subItem.title}>
                 <SidebarMenuSubButton
                   asChild
@@ -129,6 +153,7 @@ const SidebarMenuCollapsedDropdown = ({
   item: NavCollapsible
   href: string
 }) => {
+  const { isAdmin } = useAuth()
   return (
     <SidebarMenuItem>
       <DropdownMenu>
@@ -176,5 +201,73 @@ function checkIsActive(href: string, item: NavItem, mainNav = false) {
     (mainNav &&
       href.split('/')[1] !== '' &&
       href.split('/')[1] === item?.url?.split('/')[1])
+  )
+}
+
+function NavCollapsible({ title, icon: Icon, items = [] }: NavItem) {
+  const { isAdmin } = useAuth()
+
+  // 过滤需要管理员权限的子菜单项
+  const filteredItems = items.filter(item => {
+    if (item.adminOnly) {
+      return isAdmin
+    }
+    return true
+  })
+
+  return (
+    <Collapsible>
+      <CollapsibleTrigger asChild>
+        <Button
+          variant="ghost"
+          className={cn(
+            'group relative flex w-full justify-between px-4 py-2 hover:bg-accent hover:text-accent-foreground'
+          )}
+        >
+          <div className="flex items-center gap-x-3">
+            {Icon && <Icon className="h-4 w-4" />}
+            <span>{title}</span>
+          </div>
+          <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="space-y-1">
+        {filteredItems.map((item, index) => (
+          <NavLink key={index} {...item} nested />
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
+  )
+}
+
+function NavLink({
+  title,
+  url,
+  icon: Icon,
+  badge,
+  nested,
+}: NavItem & { nested?: boolean }) {
+  return (
+    <Button
+      asChild
+      variant="ghost"
+      className={cn(
+        'group relative flex w-full justify-between hover:bg-accent hover:text-accent-foreground',
+        nested ? 'pl-11' : 'px-4',
+        'py-2'
+      )}
+    >
+      <Link to={url!}>
+        <div className="flex items-center gap-x-3">
+          {Icon && <Icon className="h-4 w-4" />}
+          <span>{title}</span>
+        </div>
+        {badge && (
+          <span className="absolute right-2 top-[50%] translate-y-[-50%] text-xs">
+            {badge}
+          </span>
+        )}
+      </Link>
+    </Button>
   )
 }

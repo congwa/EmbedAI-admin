@@ -9,36 +9,31 @@ interface AuthUser {
 }
 
 interface AuthState {
-  auth: {
-    user: AuthUser | null
-    setUser: (user: AuthUser | null) => void
-    accessToken: string
-    setAccessToken: (accessToken: string) => void
-    resetAccessToken: () => void
-    reset: () => void
-  }
+  user: AuthUser | null
+  accessToken: string
+  setUser: (user: AuthUser | null) => void
+  setAccessToken: (accessToken: string) => void
+  resetAccessToken: () => void
+  reset: () => void
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      auth: {
-        user: null,
-        setUser: (user) =>
-          set((state) => ({ ...state, auth: { ...state.auth, user } })),
-        accessToken: '',
-        setAccessToken: (accessToken) =>
-          set((state) => ({ ...state, auth: { ...state.auth, accessToken } })),
-        resetAccessToken: () =>
-          set((state) => ({
-            ...state,
-            auth: { ...state.auth, accessToken: '', user: null },
-          })),
-        reset: () =>
-          set((state) => ({
-            ...state,
-            auth: { ...state.auth, user: null, accessToken: '' },
-          })),
+      user: null,
+      accessToken: '',
+      setUser: (user) => set({ user }),
+      setAccessToken: (accessToken) => {
+        set({ accessToken })
+        localStorage.setItem('token', accessToken)
+      },
+      resetAccessToken: () => {
+        set({ accessToken: '', user: null })
+        localStorage.removeItem('token')
+      },
+      reset: () => {
+        set({ user: null, accessToken: '' })
+        localStorage.removeItem('token')
       },
     }),
     {
@@ -46,13 +41,32 @@ export const useAuthStore = create<AuthState>()(
       storage: createJSONStorage(() => localStorage),
       version: 1,
       partialize: (state) => ({
-        auth: {
-          user: state.auth.user,
-          accessToken: state.auth.accessToken,
-        },
+        user: state.user,
+        accessToken: state.accessToken,
       }),
     }
   )
 )
 
-export const useAuth = () => useAuthStore((state) => state.auth)
+// 选择器函数
+const selectUser = (state: AuthState) => state.user
+const selectAccessToken = (state: AuthState) => state.accessToken
+const selectIsAdmin = (state: AuthState) => state.user?.is_admin ?? false
+
+// 导出 hooks
+export const useAuth = () => {
+  const user = useAuthStore(selectUser)
+  const accessToken = useAuthStore(selectAccessToken)
+  const isAdmin = useAuthStore(selectIsAdmin)
+  const { setUser, setAccessToken, resetAccessToken, reset } = useAuthStore()
+
+  return {
+    user,
+    accessToken,
+    isAdmin,
+    setUser,
+    setAccessToken,
+    resetAccessToken,
+    reset,
+  }
+}

@@ -1,4 +1,6 @@
 import { LinkProps } from '@tanstack/react-router'
+import { type LucideIcon } from 'lucide-react'
+import { type Icon } from '@tabler/icons-react'
 
 interface User {
   name: string
@@ -8,7 +10,7 @@ interface User {
 
 interface Team {
   name: string
-  logo: React.ElementType
+  logo: LucideIcon
   plan: string
 }
 
@@ -28,14 +30,21 @@ type NavCollapsible = BaseNavItem & {
   url?: never
 }
 
-type NavItem = NavCollapsible | NavLink
+export interface NavItem {
+  title: string
+  url?: string
+  icon?: Icon | LucideIcon
+  badge?: string
+  items?: Omit<NavItem, 'items'>[]
+  adminOnly?: boolean
+}
 
 interface NavGroup {
   title: string
   items: NavItem[]
 }
 
-interface SidebarData {
+export interface SidebarData {
   user: User
   teams: Team[]
   navGroups: NavGroup[]

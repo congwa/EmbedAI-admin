@@ -1,4 +1,5 @@
-import axios from 'axios';
+import axios from 'axios'
+import { useAuthStore } from '@/stores/authStore'
 import {
   AdminLoginRequest,
   AdminRegisterRequest,
@@ -11,54 +12,55 @@ import {
   KnowledgeBase,
   LoginResponse,
   UpdateKnowledgeBaseRequest,
-} from './types';
+  PaginationData,
+  User,
+  UpdatePasswordRequest,
+  AdminChangeUserPasswordRequest,
+} from './types'
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 class AdminService {
-  private static instance: AdminService;
-  private baseUrl: string;
-  private token: string = '';
+  private static instance: AdminService
+  private baseUrl: string
 
   private constructor() {
-    this.baseUrl = BASE_URL;
-    
+    this.baseUrl = BASE_URL
+
     // 添加响应拦截器
     axios.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-          // 清除token
-          this.token = '';
-          localStorage.removeItem('token');
-          
+        if (
+          error.response &&
+          (error.response.status === 401 || error.response.status === 403)
+        ) {
+          // 清除 store 中的 token
+          useAuthStore.getState().reset()
           // 重定向到登录页面
-          window.location.href = '/sign-in';
+          window.location.href = '/sign-in'
         }
-        return Promise.reject(error);
+        return Promise.reject(error)
       }
-    );
+    )
   }
 
   public static getInstance(): AdminService {
     if (!AdminService.instance) {
-      AdminService.instance = new AdminService();
+      AdminService.instance = new AdminService()
     }
-    return AdminService.instance;
-  }
-
-  setToken(token: string) {
-    this.token = token;
+    return AdminService.instance
   }
 
   private getHeaders() {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-    };
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
     }
-    return headers;
+    const token = useAuthStore.getState().accessToken
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+    return headers
   }
 
   // 管理员注册
@@ -67,15 +69,15 @@ class AdminService {
       `${this.baseUrl}/api/v1/admin/register`,
       data,
       { headers: this.getHeaders() }
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   // 管理员登录
   async login(data: AdminLoginRequest): Promise<ApiResponse<LoginResponse>> {
-    const formData = new URLSearchParams();
-    formData.append('email', data.email);
-    formData.append('password', data.password);
+    const formData = new URLSearchParams()
+    formData.append('email', data.email)
+    formData.append('password', data.password)
 
     const response = await axios.post<ApiResponse<LoginResponse>>(
       `${this.baseUrl}/api/v1/admin/login`,
@@ -85,8 +87,8 @@ class AdminService {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       }
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   // 创建普通用户
@@ -95,8 +97,20 @@ class AdminService {
       `${this.baseUrl}/api/v1/admin/users`,
       data,
       { headers: this.getHeaders() }
-    );
-    return response.data;
+    )
+    return response.data
+  }
+
+  // 获取普通用户列表
+  async getUsers(
+    page: number = 1,
+    page_size: number = 10
+  ): Promise<ApiResponse<PaginationData<User>>> {
+    const response = await axios.get<ApiResponse<PaginationData<User>>>(
+      `${this.baseUrl}/api/v1/admin/users?page=${page}&page_size=${page_size}`,
+      { headers: this.getHeaders() }
+    )
+    return response.data
   }
 
   // 创建知识库
@@ -108,8 +122,8 @@ class AdminService {
       `${this.baseUrl}/api/v1/admin/knowledge-bases?user_id=${userId}`,
       data,
       { headers: this.getHeaders() }
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   // 更新知识库
@@ -121,8 +135,8 @@ class AdminService {
       `${this.baseUrl}/api/v1/admin/knowledge-bases/${id}`,
       data,
       { headers: this.getHeaders() }
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   // 训练知识库
@@ -131,8 +145,8 @@ class AdminService {
       `${this.baseUrl}/api/v1/admin/knowledge-bases/${id}/train`,
       {},
       { headers: this.getHeaders() }
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   // 创建文档
@@ -144,19 +158,44 @@ class AdminService {
       `${this.baseUrl}/api/v1/admin/documents?knowledge_base_id=${knowledgeBaseId}`,
       data,
       { headers: this.getHeaders() }
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   // 获取文档列表
-  async getDocuments(query: GetDocumentsQuery): Promise<ApiResponse<Document[]>> {
-    const { knowledge_base_id, skip = 0, limit = 10 } = query;
+  async getDocuments(
+    query: GetDocumentsQuery
+  ): Promise<ApiResponse<Document[]>> {
+    const { knowledge_base_id, skip = 0, limit = 10 } = query
     const response = await axios.get<ApiResponse<Document[]>>(
       `${this.baseUrl}/api/v1/admin/documents?knowledge_base_id=${knowledge_base_id}&skip=${skip}&limit=${limit}`,
       { headers: this.getHeaders() }
-    );
-    return response.data;
+    )
+    return response.data
+  }
+
+  // 修改密码
+  async updatePassword(data: UpdatePasswordRequest): Promise<ApiResponse> {
+    const response = await axios.put<ApiResponse>(
+      `${this.baseUrl}/api/v1/admin/password`,
+      data,
+      { headers: this.getHeaders() }
+    )
+    return response.data
+  }
+
+  // 管理员修改用户密码
+  async adminChangeUserPassword(
+    userId: number,
+    data: AdminChangeUserPasswordRequest
+  ): Promise<ApiResponse> {
+    const response = await axios.put<ApiResponse>(
+      `${this.baseUrl}/api/v1/admin/users/${userId}/password`,
+      data,
+      { headers: this.getHeaders() }
+    )
+    return response.data
   }
 }
 
-export const adminService = AdminService.getInstance();
+export const adminService = AdminService.getInstance()
