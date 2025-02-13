@@ -26,11 +26,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu'
-import { NavCollapsible, NavItem, NavLink, type NavGroup } from './types'
+import {
+  type NavGroup,
+  type NavItem,
+  type NavLink,
+  type NavCollapsible,
+} from './types'
 import { useAuth } from '@/stores/authStore'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
 
 export function NavGroup({ title, items }: NavGroup) {
   const { state } = useSidebar()
@@ -52,15 +56,15 @@ export function NavGroup({ title, items }: NavGroup) {
         {filteredItems.map((item) => {
           const key = `${item.title}-${item.url}`
 
-          if (!item.items)
-            return <SidebarMenuLink key={key} item={item} href={href} />
+          if ('url' in item && !item.items)
+            return <SidebarMenuLink key={key} item={item as NavLink} href={href} />
 
           if (state === 'collapsed')
             return (
-              <SidebarMenuCollapsedDropdown key={key} item={item} href={href} />
+              <SidebarMenuCollapsedDropdown key={key} item={item as NavCollapsible} href={href} />
             )
 
-          return <SidebarMenuCollapsible key={key} item={item} href={href} />
+          return <SidebarMenuCollapsible key={key} item={item as NavCollapsible} href={href} />
         })}
       </SidebarMenu>
     </SidebarGroup>
@@ -153,7 +157,7 @@ const SidebarMenuCollapsedDropdown = ({
   item: NavCollapsible
   href: string
 }) => {
-  const { isAdmin } = useAuth()
+
   return (
     <SidebarMenuItem>
       <DropdownMenu>
@@ -194,14 +198,23 @@ const SidebarMenuCollapsedDropdown = ({
 }
 
 function checkIsActive(href: string, item: NavItem, mainNav = false) {
-  return (
-    href === item.url || // /endpint?search=param
-    href.split('?')[0] === item.url || // endpoint
-    !!item?.items?.filter((i) => i.url === href).length || // if child nav is active
-    (mainNav &&
-      href.split('/')[1] !== '' &&
-      href.split('/')[1] === item?.url?.split('/')[1])
-  )
+  if ('url' in item) {
+    return (
+      href === item.url || // /endpint?search=param
+      href.split('?')[0] === item.url // endpoint
+    )
+  }
+
+  if ('items' in item) {
+    return (
+      !!item.items.filter((i) => i.url === href).length || // if child nav is active
+      (mainNav &&
+        href.split('/')[1] !== '' &&
+        item.items.some(i => href.split('/')[1] === i.url?.split('/')[1]))
+    )
+  }
+
+  return false
 }
 
 function NavCollapsible({ title, icon: Icon, items = [] }: NavItem) {

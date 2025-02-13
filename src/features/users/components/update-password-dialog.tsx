@@ -38,12 +38,8 @@ export function UpdatePasswordDialog({ userId }: UpdatePasswordDialogProps) {
       setForm({
         new_password: '',
       })
-    } catch (_error) {
-      toast({
-        title: '修改失败',
-        description: '密码修改失败，请重试',
-        variant: 'destructive',
-      })
+    } catch {
+      // 错误已经在拦截器中处理
     }
   }
 
@@ -59,7 +55,7 @@ export function UpdatePasswordDialog({ userId }: UpdatePasswordDialogProps) {
         <DialogHeader>
           <DialogTitle>修改用户密码</DialogTitle>
           <DialogDescription>
-            请输入新密码。
+            请输入新密码，密码长度至少6个字符。
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -78,6 +74,7 @@ export function UpdatePasswordDialog({ userId }: UpdatePasswordDialogProps) {
                   new_password: e.target.value,
                 }))
               }
+              placeholder="请输入至少6个字符的密码"
             />
           </div>
         </div>

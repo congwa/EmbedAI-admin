@@ -7,6 +7,17 @@ export interface ApiResponse<T = any> {
   data: T;
 }
 
+// API错误响应的接口
+export interface ApiErrorResponse {
+  success: boolean;
+  code: number;
+  message: string;
+  data: {
+    error_type: string;
+    path: string;
+  };
+}
+
 // 分页数据结构
 export interface PaginationInfo {
   total: number;

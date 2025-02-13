@@ -1,9 +1,11 @@
 import axios from 'axios'
 import { useAuthStore } from '@/stores/authStore'
+import { toast } from '@/hooks/use-toast'
 import {
   AdminLoginRequest,
   AdminRegisterRequest,
   ApiResponse,
+  ApiErrorResponse,
   CreateDocumentRequest,
   CreateKnowledgeBaseRequest,
   CreateUserRequest,
@@ -31,14 +33,62 @@ class AdminService {
     axios.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (
-          error.response &&
-          (error.response.status === 401 || error.response.status === 403)
-        ) {
-          // 清除 store 中的 token
-          useAuthStore.getState().reset()
-          // 重定向到登录页面
-          window.location.href = '/sign-in'
+        let errorResponse: ApiErrorResponse | undefined
+
+        if (error.response) {
+          errorResponse = error.response.data as ApiErrorResponse
+
+          // 处理 HTTP 错误状态
+          switch (error.response.status) {
+            case 401:
+              // 未认证，清除 store 中的 token
+              useAuthStore.getState().reset()
+              // 重定向到登录页面
+              window.location.href = '/sign-in'
+              break
+            case 403:
+              // 无权限访问
+              useAuthStore.getState().reset()
+              window.location.href = '/sign-in'
+              break
+            case 422:
+              // 数据验证错误，显示具体的错误信息
+              toast({
+                title: '操作失败',
+                description: errorResponse.message,
+                variant: 'destructive',
+              })
+              break
+            case 500:
+              // 服务器错误
+              toast({
+                title: '服务器错误',
+                description: '服务器发生错误，请稍后重试',
+                variant: 'destructive',
+              })
+              break
+            default:
+              // 其他错误
+              toast({
+                title: '操作失败',
+                description: errorResponse?.message || '请求失败，请重试',
+                variant: 'destructive',
+              })
+          }
+        } else if (error.request) {
+          // 请求发出但没有收到响应
+          toast({
+            title: '网络错误',
+            description: '无法连接到服务器，请检查网络连接',
+            variant: 'destructive',
+          })
+        } else {
+          // 请求配置出错
+          toast({
+            title: '请求错误',
+            description: error.message,
+            variant: 'destructive',
+          })
         }
         return Promise.reject(error)
       }
