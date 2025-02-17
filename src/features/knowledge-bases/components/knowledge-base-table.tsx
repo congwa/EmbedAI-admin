@@ -59,50 +59,61 @@ export function KnowledgeBaseTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {data.map((kb) => (
-          <TableRow key={kb.id}>
-            <TableCell>{kb.id}</TableCell>
-            <TableCell>{kb.name}</TableCell>
-            <TableCell>{kb.description || '-'}</TableCell>
-            <TableCell>
-              <div className="flex items-center gap-2">
-                {kb.owner_email}
-                <Badge variant={getPermissionColor(PermissionType.OWNER)}>
-                  所有者
-                </Badge>
+        {data.length === 0 ? (
+          <TableRow>
+            <TableCell colSpan={7} className="h-24 text-center">
+              <div className="flex flex-col items-center justify-center text-sm text-muted-foreground">
+                <p>暂无知识库数据</p>
+                <p>点击右上角"创建知识库"按钮开始创建</p>
               </div>
             </TableCell>
-            <TableCell>{new Date(kb.created_at).toLocaleString()}</TableCell>
-            <TableCell>{new Date(kb.updated_at).toLocaleString()}</TableCell>
-            <TableCell className="text-right">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-8 w-8 p-0">
-                    <span className="sr-only">打开菜单</span>
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onEdit(kb)}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    编辑
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onManageUsers(kb)}>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    管理成员
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-red-600"
-                    onClick={() => onDelete(kb)}
-                  >
-                    <Trash className="mr-2 h-4 w-4" />
-                    删除
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </TableCell>
           </TableRow>
-        ))}
+        ) : (
+          data.map((kb) => (
+            <TableRow key={kb.id}>
+              <TableCell>{kb.id}</TableCell>
+              <TableCell>{kb.name}</TableCell>
+              <TableCell>{kb.description || '-'}</TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  {kb.owner_email}
+                  <Badge variant={getPermissionColor(PermissionType.OWNER)}>
+                    所有者
+                  </Badge>
+                </div>
+              </TableCell>
+              <TableCell>{new Date(kb.created_at).toLocaleString()}</TableCell>
+              <TableCell>{new Date(kb.updated_at).toLocaleString()}</TableCell>
+              <TableCell className="text-right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <span className="sr-only">打开菜单</span>
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onEdit(kb)}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      编辑
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onManageUsers(kb)}>
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      管理成员
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-red-600"
+                      onClick={() => onDelete(kb)}
+                    >
+                      <Trash className="mr-2 h-4 w-4" />
+                      删除
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            </TableRow>
+          ))
+        )}
       </TableBody>
     </Table>
   )
