@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog'
 import {
   Form,
@@ -44,11 +45,12 @@ export function KnowledgeBaseEditDialog({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: knowledgeBase?.name || '',
-      description: knowledgeBase?.description || '',
-    },
+      name: '',
+      description: '',
+    }
   })
 
+  // 只在 open 和 knowledgeBase 变化时更新表单值
   useEffect(() => {
     if (open) {
       form.reset({
@@ -56,7 +58,8 @@ export function KnowledgeBaseEditDialog({
         description: knowledgeBase?.description || '',
       })
     }
-  }, [knowledgeBase, open, form])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, knowledgeBase?.name, knowledgeBase?.description])
 
   const handleSubmit = async (values: FormValues) => {
     await onSubmit(values)
@@ -69,6 +72,9 @@ export function KnowledgeBaseEditDialog({
           <DialogTitle>
             {knowledgeBase ? '编辑知识库' : '创建知识库'}
           </DialogTitle>
+          <DialogDescription>
+            {knowledgeBase ? '修改知识库的基本信息' : '创建一个新的知识库'}
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">

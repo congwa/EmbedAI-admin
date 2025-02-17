@@ -68,6 +68,11 @@ export function KnowledgeBaseUsersDialog({
     }
   }
 
+  // 如果 knowledgeBase 不存在，不渲染对话框
+  if (!knowledgeBase) {
+    return null
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
@@ -105,7 +110,7 @@ export function KnowledgeBaseUsersDialog({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {knowledgeBase.users.map((user) => (
+            {knowledgeBase.users?.map((user) => (
               <TableRow key={user.user_id}>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>

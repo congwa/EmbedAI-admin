@@ -33,7 +33,6 @@ export function KnowledgeBasesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedKnowledgeBase, setSelectedKnowledgeBase] = useState<KnowledgeBaseDetail>()
 
-
   // 获取知识库列表
   const { data: knowledgeBasesData, refetch } = useQuery({
     queryKey: ['knowledge-bases', searchParams],
@@ -41,14 +40,14 @@ export function KnowledgeBasesPage() {
     enabled: !!user,
   })
 
-  const handleSearch = (params: { name?: string }) => {
+  // 将 handleSearch 移到 useMemo 外部并使用 useCallback
+  const handleSearch = React.useCallback((params: { name?: string }) => {
     setSearchParams(params)
-    // 由于 my 接口不支持分页，这里移除分页相关逻辑
     const filteredData = knowledgeBasesData?.data.filter(kb => 
       !params.name || kb.name.toLowerCase().includes(params.name.toLowerCase())
     )
     return filteredData || []
-  }
+  }, [knowledgeBasesData?.data])
 
   // 获取当前显示的知识库列表
   const currentKnowledgeBases = React.useMemo(() => {
@@ -56,12 +55,12 @@ export function KnowledgeBasesPage() {
     const start = (page - 1) * pageSize
     const end = start + pageSize
     return filteredData.slice(start, end)
-  }, [knowledgeBasesData?.data, searchParams, page, pageSize])
+  }, [handleSearch, searchParams, page, pageSize])
 
   // 获取总数
   const total = React.useMemo(() => {
     return handleSearch(searchParams).length
-  }, [knowledgeBasesData?.data, searchParams])
+  }, [handleSearch, searchParams])
 
   const handleCreateOrUpdate = async (values: { name: string; description?: string }) => {
     try {
