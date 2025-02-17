@@ -44,10 +44,15 @@ export interface AdminLoginRequest {
   password: string;
 }
 
+// 用户基础信息
 export interface User {
   id: number;
   email: string;
   is_admin: boolean;
+  is_active: boolean;
+  sdk_key: string;
+  secret_key: string;
+  created_by_id: number;
   created_at: string;
 }
 
@@ -66,6 +71,8 @@ export interface LoginResponse {
 export interface CreateUserRequest {
   email: string;
   password: string;
+  is_admin?: boolean;
+  is_active?: boolean;
 }
 
 // 知识库相关接口
@@ -150,13 +157,40 @@ export interface GetDocumentsQuery {
   limit?: number;
 }
 
+// 用户列表分页响应
+export interface GetUsersResponse {
+  items: User[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
 // 修改密码请求参数
 export interface UpdatePasswordRequest {
-  old_password: string
-  new_password: string
+  old_password: string;
+  new_password: string;
 }
 
 // 管理员修改用户密码请求参数
 export interface AdminChangeUserPasswordRequest {
-  new_password: string
+  new_password: string;
+}
+
+// 知识库查询请求
+export interface KnowledgeBaseQueryRequest {
+  query: string;
+  [key: string]: unknown;
+}
+
+// 知识库查询响应
+export interface KnowledgeBaseQueryResponse {
+  answer: string;
+  sources: string[];
+  [key: string]: unknown;
+}
+
+// 知识库训练响应
+export interface KnowledgeBaseTrainResponse {
+  status: string;
+  message: string;
 }

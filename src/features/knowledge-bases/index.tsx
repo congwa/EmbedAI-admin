@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/stores/authStore'
@@ -21,9 +20,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import React from 'react'
 
 export function KnowledgeBasesPage() {
-  const navigate = useNavigate()
   const { toast } = useToast()
   const { user } = useAuth()
   const [searchParams, setSearchParams] = useState<{ name?: string }>({})
@@ -34,29 +33,35 @@ export function KnowledgeBasesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedKnowledgeBase, setSelectedKnowledgeBase] = useState<KnowledgeBaseDetail>()
 
-  // 检查是否是管理员
-  useEffect(() => {
-    if (!user?.is_admin) {
-      navigate({ to: '/' })
-    }
-  }, [user, navigate])
 
   // 获取知识库列表
   const { data: knowledgeBasesData, refetch } = useQuery({
-    queryKey: ['knowledge-bases', page, pageSize, searchParams],
-    queryFn: () =>
-      adminService.getKnowledgeBases({
-        ...searchParams,
-        page,
-        page_size: pageSize,
-      }),
-    enabled: !!user?.is_admin,
+    queryKey: ['knowledge-bases', searchParams],
+    queryFn: () => adminService.getMyKnowledgeBases(),
+    enabled: !!user,
   })
 
   const handleSearch = (params: { name?: string }) => {
     setSearchParams(params)
-    setPage(1)
+    // 由于 my 接口不支持分页，这里移除分页相关逻辑
+    const filteredData = knowledgeBasesData?.data.filter(kb => 
+      !params.name || kb.name.toLowerCase().includes(params.name.toLowerCase())
+    )
+    return filteredData || []
   }
+
+  // 获取当前显示的知识库列表
+  const currentKnowledgeBases = React.useMemo(() => {
+    const filteredData = handleSearch(searchParams)
+    const start = (page - 1) * pageSize
+    const end = start + pageSize
+    return filteredData.slice(start, end)
+  }, [knowledgeBasesData?.data, searchParams, page, pageSize])
+
+  // 获取总数
+  const total = React.useMemo(() => {
+    return handleSearch(searchParams).length
+  }, [knowledgeBasesData?.data, searchParams])
 
   const handleCreateOrUpdate = async (values: { name: string; description?: string }) => {
     try {
@@ -158,7 +163,7 @@ export function KnowledgeBasesPage() {
     }
   }
 
-  if (!user?.is_admin) {
+  if (!user) {
     return null
   }
 
@@ -178,9 +183,9 @@ export function KnowledgeBasesPage() {
         </Button>
       </div>
       <KnowledgeBaseSearch onSearch={handleSearch} />
-      {knowledgeBasesData?.data.items && (
+      {currentKnowledgeBases && (
         <KnowledgeBaseTable
-          data={knowledgeBasesData.data.items}
+          data={currentKnowledgeBases}
           onEdit={(kb: KnowledgeBaseDetail) => {
             setSelectedKnowledgeBase(kb)
             setEditDialogOpen(true)
@@ -194,6 +199,29 @@ export function KnowledgeBasesPage() {
             setUsersDialogOpen(true)
           }}
         />
+      )}
+      {total > pageSize && (
+        <div className="flex justify-end mt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(Math.max(1, page - 1))}
+            disabled={page === 1}
+          >
+            上一页
+          </Button>
+          <div className="mx-4">
+            第 {page} 页 / 共 {Math.ceil(total / pageSize)} 页
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(page + 1)}
+            disabled={page * pageSize >= total}
+          >
+            下一页
+          </Button>
+        </div>
       )}
       <KnowledgeBaseEditDialog
         open={editDialogOpen}

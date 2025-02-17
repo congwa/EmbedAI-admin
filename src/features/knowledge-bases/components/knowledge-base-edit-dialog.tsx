@@ -44,28 +44,22 @@ export function KnowledgeBaseEditDialog({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      description: '',
+      name: knowledgeBase?.name || '',
+      description: knowledgeBase?.description || '',
     },
   })
 
   useEffect(() => {
-    if (knowledgeBase) {
+    if (open) {
       form.reset({
-        name: knowledgeBase.name,
-        description: knowledgeBase.description || '',
-      })
-    } else {
-      form.reset({
-        name: '',
-        description: '',
+        name: knowledgeBase?.name || '',
+        description: knowledgeBase?.description || '',
       })
     }
-  }, [knowledgeBase, form])
+  }, [knowledgeBase, open, form])
 
   const handleSubmit = async (values: FormValues) => {
     await onSubmit(values)
-    form.reset()
   }
 
   return (

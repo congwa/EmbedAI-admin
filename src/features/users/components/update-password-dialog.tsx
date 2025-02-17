@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { ReactNode, useState } from 'react'
 import { Key } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,9 +17,10 @@ import { adminService } from '@/services/admin'
 
 interface UpdatePasswordDialogProps {
   userId: number
+  children?: ReactNode
 }
 
-export function UpdatePasswordDialog({ userId }: UpdatePasswordDialogProps) {
+export function UpdatePasswordDialog({ userId, children }: UpdatePasswordDialogProps) {
   const { toast } = useToast()
   const [isOpen, setIsOpen] = useState(false)
   const [form, setForm] = useState({
@@ -46,10 +47,12 @@ export function UpdatePasswordDialog({ userId }: UpdatePasswordDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Key className="mr-2 h-4 w-4" />
-          修改密码
-        </Button>
+        {children || (
+          <Button variant="outline" size="sm">
+            <Key className="mr-2 h-4 w-4" />
+            修改密码
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

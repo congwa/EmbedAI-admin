@@ -11,7 +11,6 @@ import {
   CreateUserRequest,
   Document,
   GetDocumentsQuery,
-  KnowledgeBase,
   LoginResponse,
   UpdateKnowledgeBaseRequest,
   PaginationData,
@@ -22,6 +21,9 @@ import {
   KnowledgeBaseDetail,
   KnowledgeBasePermissionCreate,
   KnowledgeBasePermissionUpdate,
+  KnowledgeBaseTrainResponse,
+  KnowledgeBaseQueryRequest,
+  KnowledgeBaseQueryResponse,
 } from './types'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
@@ -146,8 +148,8 @@ class AdminService {
   }
 
   // 创建普通用户
-  async createUser(data: CreateUserRequest): Promise<ApiResponse> {
-    const response = await axios.post<ApiResponse>(
+  async createUser(data: CreateUserRequest): Promise<ApiResponse<User>> {
+    const response = await axios.post<ApiResponse<User>>(
       `${this.baseUrl}/api/v1/admin/users`,
       data,
       { headers: this.getHeaders() }
@@ -161,7 +163,40 @@ class AdminService {
     page_size: number = 10
   ): Promise<ApiResponse<PaginationData<User>>> {
     const response = await axios.get<ApiResponse<PaginationData<User>>>(
-      `${this.baseUrl}/api/v1/admin/users?page=${page}&page_size=${page_size}`,
+      `${this.baseUrl}/api/v1/admin/users`,
+      {
+        params: { page, page_size },
+        headers: this.getHeaders(),
+      }
+    )
+    return response.data
+  }
+
+  // 修改用户状态
+  async updateUserStatus(userId: number, is_active: boolean): Promise<ApiResponse<User>> {
+    const response = await axios.put<ApiResponse<User>>(
+      `${this.baseUrl}/api/v1/admin/users/${userId}/status`,
+      { is_active },
+      { headers: this.getHeaders() }
+    )
+    return response.data
+  }
+
+  // 修改用户管理员权限
+  async updateUserAdmin(userId: number, is_admin: boolean): Promise<ApiResponse<User>> {
+    const response = await axios.put<ApiResponse<User>>(
+      `${this.baseUrl}/api/v1/admin/users/${userId}/admin`,
+      { is_admin },
+      { headers: this.getHeaders() }
+    )
+    return response.data
+  }
+
+  // 重置用户密钥对
+  async resetUserKeys(userId: number): Promise<ApiResponse<User>> {
+    const response = await axios.post<ApiResponse<User>>(
+      `${this.baseUrl}/api/v1/admin/users/${userId}/reset-keys`,
+      {},
       { headers: this.getHeaders() }
     )
     return response.data
@@ -241,11 +276,38 @@ class AdminService {
     return response.data
   }
 
-  // 训练知识库
-  async trainKnowledgeBase(id: number): Promise<ApiResponse> {
-    const response = await axios.post<ApiResponse>(
+  async trainKnowledgeBase(id: number): Promise<ApiResponse<KnowledgeBaseTrainResponse>> {
+    const response = await axios.post<ApiResponse<KnowledgeBaseTrainResponse>>(
       `${this.baseUrl}/api/v1/admin/knowledge-bases/${id}/train`,
       {},
+      { headers: this.getHeaders() }
+    )
+    return response.data
+  }
+
+  async queryKnowledgeBase(
+    id: number,
+    data: KnowledgeBaseQueryRequest
+  ): Promise<ApiResponse<KnowledgeBaseQueryResponse>> {
+    const response = await axios.post<ApiResponse<KnowledgeBaseQueryResponse>>(
+      `${this.baseUrl}/api/v1/admin/knowledge-bases/${id}/query`,
+      data,
+      { headers: this.getHeaders() }
+    )
+    return response.data
+  }
+
+  async getKnowledgeBase(id: number): Promise<ApiResponse<KnowledgeBaseDetail>> {
+    const response = await axios.get<ApiResponse<KnowledgeBaseDetail>>(
+      `${this.baseUrl}/api/v1/admin/knowledge-bases/${id}`,
+      { headers: this.getHeaders() }
+    )
+    return response.data
+  }
+
+  async getMyKnowledgeBases(): Promise<ApiResponse<KnowledgeBaseDetail[]>> {
+    const response = await axios.get<ApiResponse<KnowledgeBaseDetail[]>>(
+      `${this.baseUrl}/api/v1/admin/knowledge-bases/my`,
       { headers: this.getHeaders() }
     )
     return response.data

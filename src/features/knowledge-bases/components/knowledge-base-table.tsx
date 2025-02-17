@@ -30,12 +30,12 @@ export function KnowledgeBaseTable({
   onDelete,
   onManageUsers,
 }: KnowledgeBaseTableProps) {
-  const getPermissionColor = (permission: PermissionType) => {
+  const getPermissionColor = (permission: PermissionType): "default" | "secondary" | "destructive" | "outline" | "success" | "warning" => {
     switch (permission) {
       case PermissionType.OWNER:
-        return 'default'
+        return 'success'
       case PermissionType.ADMIN:
-        return 'secondary'
+        return 'warning'
       case PermissionType.EDITOR:
         return 'default'
       case PermissionType.VIEWER:
