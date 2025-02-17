@@ -248,7 +248,7 @@ class AdminService {
     data: KnowledgeBasePermissionCreate
   ): Promise<ApiResponse<null>> {
     const response = await axios.post<ApiResponse<null>>(
-      `${this.baseUrl}/api/v1/admin/knowledge-bases/${kb_id}/users`,
+      `${this.baseUrl}/api/v1/admin/knowledge-bases/${kb_id}/members`,
       data,
       { headers: this.getHeaders() }
     )
@@ -261,7 +261,7 @@ class AdminService {
     data: KnowledgeBasePermissionUpdate
   ): Promise<ApiResponse<null>> {
     const response = await axios.put<ApiResponse<null>>(
-      `${this.baseUrl}/api/v1/admin/knowledge-bases/${kb_id}/users/${user_id}`,
+      `${this.baseUrl}/api/v1/admin/knowledge-bases/${kb_id}/members/${user_id}`,
       data,
       { headers: this.getHeaders() }
     )
@@ -270,7 +270,7 @@ class AdminService {
 
   async removeKnowledgeBaseUser(kb_id: number, user_id: number): Promise<ApiResponse<null>> {
     const response = await axios.delete<ApiResponse<null>>(
-      `${this.baseUrl}/api/v1/admin/knowledge-bases/${kb_id}/users/${user_id}`,
+      `${this.baseUrl}/api/v1/admin/knowledge-bases/${kb_id}/members/${user_id}`,
       { headers: this.getHeaders() }
     )
     return response.data

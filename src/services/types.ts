@@ -130,6 +130,22 @@ export interface KnowledgeBasePermissionUpdate {
   permission: PermissionType;
 }
 
+// 知识库成员信息
+export interface KnowledgeBaseMember {
+  id: number;
+  email: string;
+  permission: PermissionType;
+  is_owner: boolean;
+  is_admin: boolean;
+  created_at: string;
+}
+
+// 知识库成员列表响应
+export interface KnowledgeBaseMemberList {
+  members: KnowledgeBaseMember[];
+  total: number;
+}
+
 // 获取知识库列表的查询参数
 export interface GetKnowledgeBasesQuery {
   page?: number;
