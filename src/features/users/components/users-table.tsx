@@ -13,6 +13,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import type { User } from '@/services/types'
@@ -36,21 +42,47 @@ export function UsersTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>ID</TableHead>
-            <TableHead>邮箱</TableHead>
-            <TableHead>角色</TableHead>
-            <TableHead>状态</TableHead>
-            <TableHead>SDK密钥</TableHead>
-            <TableHead>密钥</TableHead>
-            <TableHead>创建时间</TableHead>
-            <TableHead className="text-right">操作</TableHead>
+            <TableHead className="w-[60px]">ID</TableHead>
+            <TableHead className="w-[180px]">邮箱</TableHead>
+            <TableHead className="w-[100px]">角色</TableHead>
+            <TableHead className="w-[100px]">状态</TableHead>
+            <TableHead className="w-[200px]">
+              <div className="flex items-center gap-2">
+                SDK密钥
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-4 w-4 hover:bg-transparent"
+                  onClick={() => {/* 可以添加复制功能 */}}
+                >
+                  <Key className="h-3 w-3" />
+                </Button>
+              </div>
+            </TableHead>
+            <TableHead className="w-[200px]">
+              <div className="flex items-center gap-2">
+                密钥
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-4 w-4 hover:bg-transparent"
+                  onClick={() => {/* 可以添加复制功能 */}}
+                >
+                  <Key className="h-3 w-3" />
+                </Button>
+              </div>
+            </TableHead>
+            <TableHead className="w-[160px]">创建时间</TableHead>
+            <TableHead className="w-[100px] text-right">操作</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {users.map((user) => (
             <TableRow key={user.id}>
               <TableCell>{user.id}</TableCell>
-              <TableCell>{user.email}</TableCell>
+              <TableCell className="truncate max-w-[180px]">
+                <span className="truncate">{user.email}</span>
+              </TableCell>
               <TableCell>
                 <Badge variant={user.is_admin ? 'default' : 'secondary'}>
                   {user.is_admin ? '管理员' : '普通用户'}
@@ -61,11 +93,55 @@ export function UsersTable({
                   {user.is_active ? '已启用' : '已禁用'}
                 </Badge>
               </TableCell>
-              <TableCell className="font-mono text-sm">{user.sdk_key}</TableCell>
-              <TableCell className="font-mono text-sm">{user.secret_key}</TableCell>
-              <TableCell>
-                {new Date(user.created_at).toLocaleString('zh-CN')}
+              <TableCell className="font-mono text-sm">
+                <div className="flex items-center gap-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="truncate max-w-[160px] cursor-help">
+                          {user.sdk_key}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="font-mono">{user.sdk_key}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0"
+                    onClick={() => navigator.clipboard.writeText(user.sdk_key)}
+                  >
+                    <Key className="h-3 w-3" />
+                  </Button>
+                </div>
               </TableCell>
+              <TableCell className="font-mono text-sm">
+                <div className="flex items-center gap-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="truncate max-w-[160px] cursor-help">
+                          {user.secret_key}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="font-mono">{user.secret_key}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0"
+                    onClick={() => navigator.clipboard.writeText(user.secret_key)}
+                  >
+                    <Key className="h-3 w-3" />
+                  </Button>
+                </div>
+              </TableCell>
+              <TableCell>{new Date(user.created_at).toLocaleString('zh-CN')}</TableCell>
               <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
