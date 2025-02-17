@@ -18,6 +18,10 @@ import {
   User,
   UpdatePasswordRequest,
   AdminChangeUserPasswordRequest,
+  GetKnowledgeBasesQuery,
+  KnowledgeBaseDetail,
+  KnowledgeBasePermissionCreate,
+  KnowledgeBasePermissionUpdate,
 } from './types'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
@@ -163,27 +167,75 @@ class AdminService {
     return response.data
   }
 
-  // 创建知识库
-  async createKnowledgeBase(
-    data: CreateKnowledgeBaseRequest,
-    userId: number
-  ): Promise<ApiResponse<KnowledgeBase>> {
-    const response = await axios.post<ApiResponse<KnowledgeBase>>(
-      `${this.baseUrl}/api/v1/admin/knowledge-bases?user_id=${userId}`,
+  // 知识库管理相关接口
+  async getKnowledgeBases(params: GetKnowledgeBasesQuery): Promise<ApiResponse<PaginationData<KnowledgeBaseDetail>>> {
+    const response = await axios.get<ApiResponse<PaginationData<KnowledgeBaseDetail>>>(
+      `${this.baseUrl}/api/v1/admin/knowledge-bases`,
+      {
+        params,
+        headers: this.getHeaders(),
+      }
+    )
+    return response.data
+  }
+
+  async createKnowledgeBase(data: CreateKnowledgeBaseRequest): Promise<ApiResponse<KnowledgeBaseDetail>> {
+    const response = await axios.post<ApiResponse<KnowledgeBaseDetail>>(
+      `${this.baseUrl}/api/v1/admin/knowledge-bases`,
       data,
       { headers: this.getHeaders() }
     )
     return response.data
   }
 
-  // 更新知识库
   async updateKnowledgeBase(
     id: number,
     data: UpdateKnowledgeBaseRequest
-  ): Promise<ApiResponse<KnowledgeBase>> {
-    const response = await axios.put<ApiResponse<KnowledgeBase>>(
+  ): Promise<ApiResponse<KnowledgeBaseDetail>> {
+    const response = await axios.put<ApiResponse<KnowledgeBaseDetail>>(
       `${this.baseUrl}/api/v1/admin/knowledge-bases/${id}`,
       data,
+      { headers: this.getHeaders() }
+    )
+    return response.data
+  }
+
+  async deleteKnowledgeBase(id: number): Promise<ApiResponse<null>> {
+    const response = await axios.delete<ApiResponse<null>>(
+      `${this.baseUrl}/api/v1/admin/knowledge-bases/${id}`,
+      { headers: this.getHeaders() }
+    )
+    return response.data
+  }
+
+  async addKnowledgeBaseUser(
+    kb_id: number,
+    data: KnowledgeBasePermissionCreate
+  ): Promise<ApiResponse<null>> {
+    const response = await axios.post<ApiResponse<null>>(
+      `${this.baseUrl}/api/v1/admin/knowledge-bases/${kb_id}/users`,
+      data,
+      { headers: this.getHeaders() }
+    )
+    return response.data
+  }
+
+  async updateKnowledgeBaseUserPermission(
+    kb_id: number,
+    user_id: number,
+    data: KnowledgeBasePermissionUpdate
+  ): Promise<ApiResponse<null>> {
+    const response = await axios.put<ApiResponse<null>>(
+      `${this.baseUrl}/api/v1/admin/knowledge-bases/${kb_id}/users/${user_id}`,
+      data,
+      { headers: this.getHeaders() }
+    )
+    return response.data
+  }
+
+  async removeKnowledgeBaseUser(kb_id: number, user_id: number): Promise<ApiResponse<null>> {
+    const response = await axios.delete<ApiResponse<null>>(
+      `${this.baseUrl}/api/v1/admin/knowledge-bases/${kb_id}/users/${user_id}`,
       { headers: this.getHeaders() }
     )
     return response.data

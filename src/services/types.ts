@@ -72,19 +72,62 @@ export interface CreateUserRequest {
 export interface KnowledgeBase {
   id: number;
   name: string;
-  description: string;
+  description?: string;
+  owner_id: number;
+  created_at: string;
+  updated_at: string;
 }
 
-// 创建知识库请求参数
+// 知识库权限类型
+export enum PermissionType {
+  OWNER = "owner",
+  ADMIN = "admin",
+  EDITOR = "editor",
+  VIEWER = "viewer"
+}
+
+// 知识库用户权限
+export interface KnowledgeBaseUser {
+  user_id: number;
+  email: string;
+  permission: PermissionType;
+  created_at: string;
+}
+
+// 知识库详情
+export interface KnowledgeBaseDetail extends KnowledgeBase {
+  owner_email: string;
+  users: KnowledgeBaseUser[];
+}
+
+// 知识库创建请求
 export interface CreateKnowledgeBaseRequest {
   name: string;
-  description: string;
+  description?: string;
 }
 
-// 更新知识库请求参数
+// 知识库更新请求
 export interface UpdateKnowledgeBaseRequest {
-  name: string;
-  description: string;
+  name?: string;
+  description?: string;
+}
+
+// 知识库权限创建请求
+export interface KnowledgeBasePermissionCreate {
+  user_id: number;
+  permission: PermissionType;
+}
+
+// 知识库权限更新请求
+export interface KnowledgeBasePermissionUpdate {
+  permission: PermissionType;
+}
+
+// 获取知识库列表的查询参数
+export interface GetKnowledgeBasesQuery {
+  page?: number;
+  page_size?: number;
+  name?: string;
 }
 
 // 文档相关接口
