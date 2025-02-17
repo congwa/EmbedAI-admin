@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AxiosError } from 'axios'
 import {
   Dialog,
   DialogContent,
@@ -68,8 +69,14 @@ export function KnowledgeBaseUsersDialog({
         title: '添加成功',
         description: '成员已添加到知识库',
       })
-    } catch (_error) {
-      // 错误已在 service 层处理
+    } catch (_error: unknown) {
+      if (_error instanceof AxiosError && _error.response?.data?.message) {
+        toast({
+          title: '添加失败',
+          description: _error.response.data.message,
+          variant: 'destructive',
+        })
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -82,8 +89,14 @@ export function KnowledgeBaseUsersDialog({
         title: '更新成功',
         description: '成员权限已更新',
       })
-    } catch (_error) {
-      // 错误已在 service 层处理
+    } catch (_error: unknown) {
+      if (_error instanceof AxiosError && _error.response?.data?.message) {
+        toast({
+          title: '更新失败',
+          description: _error.response.data.message,
+          variant: 'destructive',
+        })
+      }
     }
   }
 
@@ -94,8 +107,14 @@ export function KnowledgeBaseUsersDialog({
         title: '移除成功',
         description: '成员已从知识库中移除',
       })
-    } catch (_error) {
-      // 错误已在 service 层处理
+    } catch (_error: unknown) {
+      if (_error instanceof AxiosError && _error.response?.data?.message) {
+        toast({
+          title: '移除失败',
+          description: _error.response.data.message,
+          variant: 'destructive',
+        })
+      }
     }
   }
 
