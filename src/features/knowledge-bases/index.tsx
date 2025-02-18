@@ -62,7 +62,25 @@ export function KnowledgeBasesPage() {
     return handleSearch(searchParams).length
   }, [handleSearch, searchParams])
 
-  const handleCreateOrUpdate = async (values: { name: string; description?: string }) => {
+  const handleCreateOrUpdate = async (values: {
+    name: string
+    domain: string
+    example_queries?: string[]
+    entity_types?: string[]
+    llm_config?: {
+      llm: {
+        model: string
+        base_url: string
+        api_key: string
+      }
+      embeddings: {
+        model: string
+        base_url: string
+        api_key: string
+        embedding_dim: number
+      }
+    }
+  }) => {
     try {
       if (selectedKnowledgeBase) {
         await adminService.updateKnowledgeBase(selectedKnowledgeBase.id, values)

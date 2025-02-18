@@ -346,7 +346,7 @@ class AdminService {
 
   // 获取文档列表
   async getDocuments(
-    query: GetDocumentsQuery
+    query: GetDocumentsQuery & { skip?: number; limit?: number }
   ): Promise<ApiResponse<Document[]>> {
     const { knowledge_base_id, skip = 0, limit = 10 } = query
     const response = await axios.get<ApiResponse<Document[]>>(
