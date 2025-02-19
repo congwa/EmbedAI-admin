@@ -14,7 +14,7 @@ export default function SignIn() {
           </p>
         </div>
         <UserAuthForm />
-        <p className='mt-4 px-8 text-center text-sm text-muted-foreground'>
+        {/* <p className='mt-4 px-8 text-center text-sm text-muted-foreground'>
           By clicking login, you agree to our{' '}
           <a
             href='/terms'
@@ -30,7 +30,7 @@ export default function SignIn() {
             Privacy Policy
           </a>
           .
-        </p>
+        </p> */}
       </Card>
     </AuthLayout>
   )
