@@ -33,15 +33,7 @@ import {
 import { ArrowLeft, Plus, Search } from 'lucide-react'
 import { Document, DocumentType, CreateDocumentRequest, UpdateDocumentRequest } from '@/services/types'
 import { DocumentEditDialog } from './document-edit-dialog'
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis,
-} from '@/components/ui/pagination'
+import { DocumentPagination } from './document-pagination'
 
 export function KnowledgeBaseDocumentsPage() {
   const { id } = useParams({ from: '/_authenticated/knowledge-bases/$id/documents/' })
@@ -51,7 +43,7 @@ export function KnowledgeBaseDocumentsPage() {
     doc_type: undefined as DocumentType | undefined,
   })
   const [page, setPage] = useState(1)
-  const pageSize = 10
+  const [pageSize, setPageSize] = useState(10)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedDocument, setSelectedDocument] = useState<Document>()
@@ -131,6 +123,15 @@ export function KnowledgeBaseDocumentsPage() {
         description: '请稍后重试',
       })
     }
+  }
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+  }
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize)
+    setPage(1) // 重置到第一页
   }
 
   return (
@@ -257,97 +258,13 @@ export function KnowledgeBaseDocumentsPage() {
       </Table>
 
       {documentsData?.data.pagination && documentsData.data.pagination.total > pageSize && (
-        <div className="mt-4">
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious 
-                  onClick={() => setPage(Math.max(1, page - 1))}
-                  className={page === 1 ? 'pointer-events-none opacity-50' : ''}
-                  href="#"
-                />
-              </PaginationItem>
-              
-              {(() => {
-                const totalPages = Math.ceil(documentsData.data.pagination.total / pageSize)
-                const items = []
-                
-                // 始终显示第一页
-                items.push(
-                  <PaginationItem key={1}>
-                    <PaginationLink 
-                      href="#"
-                      onClick={() => setPage(1)}
-                      isActive={page === 1}
-                    >
-                      1
-                    </PaginationLink>
-                  </PaginationItem>
-                )
-
-                // 添加前省略号
-                if (page > 3) {
-                  items.push(
-                    <PaginationItem key="ellipsis-1">
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  )
-                }
-
-                // 显示当前页及其前后页
-                for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) {
-                  if (i <= page + 1 && i >= page - 1) {
-                    items.push(
-                      <PaginationItem key={i}>
-                        <PaginationLink 
-                          href="#"
-                          onClick={() => setPage(i)}
-                          isActive={page === i}
-                        >
-                          {i}
-                        </PaginationLink>
-                      </PaginationItem>
-                    )
-                  }
-                }
-
-                // 添加后省略号
-                if (page < totalPages - 2) {
-                  items.push(
-                    <PaginationItem key="ellipsis-2">
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  )
-                }
-
-                // 始终显示最后一页
-                if (totalPages > 1) {
-                  items.push(
-                    <PaginationItem key={totalPages}>
-                      <PaginationLink 
-                        href="#"
-                        onClick={() => setPage(totalPages)}
-                        isActive={page === totalPages}
-                      >
-                        {totalPages}
-                      </PaginationLink>
-                    </PaginationItem>
-                  )
-                }
-
-                return items
-              })()}
-
-              <PaginationItem>
-                <PaginationNext 
-                  onClick={() => setPage(page + 1)}
-                  className={page * pageSize >= (documentsData.data.pagination?.total || 0) ? 'pointer-events-none opacity-50' : ''}
-                  href="#"
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
+        <DocumentPagination
+          page={page}
+          pageSize={pageSize}
+          total={documentsData.data.pagination.total}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+        />
       )}
 
       <DocumentEditDialog
