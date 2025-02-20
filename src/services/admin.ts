@@ -337,7 +337,7 @@ class AdminService {
     knowledgeBaseId: number
   ): Promise<ApiResponse<Document>> {
     const response = await axios.post<ApiResponse<Document>>(
-      `${this.baseUrl}/api/v1/admin/documents?knowledge_base_id=${knowledgeBaseId}`,
+      `${this.baseUrl}/api/v1/admin/knowledge-bases/${knowledgeBaseId}/documents`,
       data,
       { headers: this.getHeaders() }
     )
@@ -346,11 +346,42 @@ class AdminService {
 
   // 获取文档列表
   async getDocuments(
-    query: GetDocumentsQuery & { skip?: number; limit?: number }
-  ): Promise<ApiResponse<Document[]>> {
-    const { knowledge_base_id, skip = 0, limit = 10 } = query
-    const response = await axios.get<ApiResponse<Document[]>>(
-      `${this.baseUrl}/api/v1/admin/documents?knowledge_base_id=${knowledge_base_id}&skip=${skip}&limit=${limit}`,
+    query: GetDocumentsQuery
+  ): Promise<ApiResponse<PaginationData<Document>>> {
+    const response = await axios.get<ApiResponse<PaginationData<Document>>>(
+      `${this.baseUrl}/api/v1/admin/knowledge-bases/${query.knowledge_base_id}/documents`,
+      {
+        params: {
+          skip: query.skip,
+          limit: query.limit,
+          title: query.title,
+          doc_type: query.doc_type,
+          start_time: query.start_time,
+          end_time: query.end_time,
+        },
+        headers: this.getHeaders(),
+      }
+    )
+    return response.data
+  }
+
+  // 更新文档
+  async updateDocument(
+    docId: number,
+    data: Partial<CreateDocumentRequest>
+  ): Promise<ApiResponse<Document>> {
+    const response = await axios.put<ApiResponse<Document>>(
+      `${this.baseUrl}/api/v1/admin/documents/${docId}`,
+      data,
+      { headers: this.getHeaders() }
+    )
+    return response.data
+  }
+
+  // 删除文档
+  async deleteDocument(docId: number): Promise<ApiResponse<Document>> {
+    const response = await axios.delete<ApiResponse<Document>>(
+      `${this.baseUrl}/api/v1/admin/documents/${docId}`,
       { headers: this.getHeaders() }
     )
     return response.data

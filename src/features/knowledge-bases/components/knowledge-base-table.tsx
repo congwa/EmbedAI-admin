@@ -1,5 +1,6 @@
-import { MoreHorizontal, Pencil, Trash, UserPlus } from 'lucide-react'
+import { MoreHorizontal, Pencil, Trash, UserPlus, FileText } from 'lucide-react'
 import { KnowledgeBaseDetail, PermissionType } from '@/services/types'
+import { Link } from '@tanstack/react-router'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,7 +52,6 @@ export function KnowledgeBaseTable({
         <TableRow>
           <TableHead>ID</TableHead>
           <TableHead>名称</TableHead>
-          <TableHead>描述</TableHead>
           <TableHead>创建者</TableHead>
           <TableHead>创建时间</TableHead>
           <TableHead>更新时间</TableHead>
@@ -72,8 +72,16 @@ export function KnowledgeBaseTable({
           data.map((kb) => (
             <TableRow key={kb.id}>
               <TableCell>{kb.id}</TableCell>
-              <TableCell>{kb.name}</TableCell>
-              <TableCell>{kb.description || '-'}</TableCell>
+              <TableCell>
+                <Link
+                  to="/knowledge-bases/$id/documents"
+                  params={{ id: String(kb.id) }}
+                  className="hover:underline"
+                >
+                  {kb.name}
+                </Link>
+              </TableCell>
+             
               <TableCell>
                 <div className="flex items-center gap-2">
                   {kb.owner_email}
@@ -101,6 +109,15 @@ export function KnowledgeBaseTable({
                       <UserPlus className="mr-2 h-4 w-4" />
                       管理成员
                     </DropdownMenuItem>
+                    <Link
+                      to="/knowledge-bases/$id/documents"
+                      params={{ id: String(kb.id) }}
+                    >
+                      <DropdownMenuItem>
+                        <FileText className="mr-2 h-4 w-4" />
+                        文档管理
+                      </DropdownMenuItem>
+                    </Link>
                     <DropdownMenuItem
                       className="text-red-600"
                       onClick={() => onDelete(kb)}

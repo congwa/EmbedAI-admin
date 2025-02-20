@@ -192,33 +192,63 @@ export interface GetKnowledgeBasesQuery {
   name?: string;
 }
 
-// 文档相关接口
+// 文档类型枚举
+export enum DocumentType {
+  TEXT = 'text',
+  WEBPAGE = 'webpage',
+  PDF = 'pdf',
+}
+
+// 文档基础信息
 export interface Document {
-  id: number;                     // 文档ID
-  knowledge_base_id: number;      // 所属知识库ID
-  title: string;                  // 文档标题
-  content: string;                // 文档内容
-  word_count: number;             // 字数统计
-  chunk_count?: number;           // 分块数量
-  created_at: string;             // 创建时间
-  updated_at: string;             // 更新时间
-  error_message?: string;         // 错误信息（如果处理失败）
-  metadata?: Record<string, unknown>; // 其他元数据
+  id: number;
+  title: string;
+  content: string;
+  doc_type: DocumentType;
+  knowledge_base_id: number;
+  created_at: string;
+  updated_at: string;
+  created_by_id: number;
+  is_deleted: boolean;
+  word_count: number;
+  chunk_count: number;
+  metadata?: Record<string, unknown>;
+  source_url?: string;
 }
 
 // 创建文档请求参数
 export interface CreateDocumentRequest {
-  title: string;                  // 文档标题
-  content: string;                // 文档内容
-  metadata?: Record<string, unknown>; // 可选：文档元数据
+  title: string;
+  content: string;
+  doc_type: DocumentType;
+  metadata?: Record<string, unknown>;
+}
+
+// 更新文档请求参数
+export interface UpdateDocumentRequest {
+  title?: string;
+  content?: string;
+  doc_type?: DocumentType;
+  metadata?: Record<string, unknown>;
 }
 
 // 获取文档列表的查询参数
 export interface GetDocumentsQuery {
-  knowledge_base_id: number;      // 知识库ID
-  page?: number;                  // 可选：页码
-  page_size?: number;            // 可选：每页数量
-  search?: string;               // 可选：搜索关键词
+  knowledge_base_id: number;
+  skip?: number;
+  limit?: number;
+  title?: string;
+  doc_type?: DocumentType;
+  start_time?: string;
+  end_time?: string;
+}
+
+// 文档分页响应
+export interface DocumentPagination {
+  total: number;
+  page: number;
+  page_size: number;
+  items: Document[];
 }
 
 // 用户列表分页响应
