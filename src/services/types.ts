@@ -305,3 +305,233 @@ export interface KnowledgeBaseTrainResponse {
   error_documents?: number;               // 可选：处理失败文档数
   estimated_time_remaining?: number;      // 可选：预估剩余时间（秒）
 }
+
+// 文档上传进度跟踪
+export interface DocumentUploadProgress {
+  documentId?: number;
+  filename: string;
+  progress: number;
+  status: 'uploading' | 'processing' | 'completed' | 'error';
+  error?: string;
+}
+
+// 文档过滤参数
+export interface DocumentFilter {
+  knowledge_base_id?: number;
+  title?: string;
+  doc_type?: DocumentType;
+  start_time?: string;
+  end_time?: string;
+  created_by_id?: number;
+}
+
+// 聊天相关接口
+
+// 聊天状态枚举
+export enum ChatStatus {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  ARCHIVED = 'archived'
+}
+
+// 消息发送者类型
+export enum MessageSenderType {
+  USER = 'user',
+  ADMIN = 'admin',
+  SYSTEM = 'system'
+}
+
+// 消息类型
+export enum MessageType {
+  TEXT = 'text',
+  FILE = 'file',
+  SYSTEM = 'system'
+}
+
+// 聊天会话基础信息 (基于实际API响应)
+export interface Chat {
+  id: number; // 实际API使用数字ID
+  third_party_user_id: number; // 实际API字段名
+  kb_id: number; // 实际API字段名
+  title?: string; // 聊天标题
+  status: ChatStatus;
+  created_at: string;
+  updated_at: string;
+  last_message_at?: string;
+  message_count?: number;
+  is_active: boolean;
+  user_email?: string; // 可能需要从其他地方获取
+  knowledge_base_name?: string; // 可能需要从其他地方获取
+}
+
+// 聊天消息 (基于实际API响应)
+export interface ChatMessage {
+  id: number;
+  chat_id: number;
+  sender_type: 'official' | 'third_party'; // 实际API使用的类型
+  sender_id: number;
+  content: string;
+  message_type: string; // 实际API使用字符串而不是枚举
+  created_at: string;
+  metadata: Record<string, unknown>;
+  sender_email?: string; // 这个可能需要从其他地方获取
+}
+
+// 创建聊天消息请求 (基于实际API)
+export interface ChatMessageCreate {
+  content: string;
+  message_type?: string; // 实际API使用字符串，且为可选
+  metadata?: Record<string, unknown>;
+}
+
+// 获取聊天列表查询参数 (基于实际API)
+export interface GetChatsQuery {
+  skip?: number;
+  limit?: number;
+  include_inactive?: boolean;
+  all_chats?: boolean;
+  user_id?: number; // 实际API使用数字ID
+  knowledge_base_id?: number;
+  status?: ChatStatus;
+}
+
+// 聊天统计信息
+export interface ChatStats {
+  total_chats: number;
+  active_chats: number;
+  total_messages: number;
+  avg_messages_per_chat: number;
+  last_activity: string;
+}
+
+// WebSocket 消息基础接口 (基于实际协议 V2)
+export interface WebSocketMessage {
+  type: string; // 格式为 "domain.action"
+  payload: unknown;
+  request_id?: string;
+}
+
+// 客户端到服务器消息类型
+export interface MessageCreateRequest extends WebSocketMessage {
+  type: 'message.create';
+  payload: {
+    content: string;
+    message_type?: string;
+    metadata?: Record<string, unknown>;
+  };
+}
+
+export interface HistoryRequest extends WebSocketMessage {
+  type: 'history.request';
+  payload: {
+    before_message_id?: number;
+    limit?: number;
+  };
+}
+
+export interface TypingStartRequest extends WebSocketMessage {
+  type: 'typing.start';
+  payload: {
+    is_typing: boolean;
+  };
+}
+
+export interface TypingStopRequest extends WebSocketMessage {
+  type: 'typing.stop';
+  payload: {
+    is_typing: boolean;
+  };
+}
+
+export interface MessageReadRequest extends WebSocketMessage {
+  type: 'message.read';
+  payload: {
+    message_ids: number[];
+  };
+}
+
+export interface MembersRequest extends WebSocketMessage {
+  type: 'members.request';
+  payload: Record<string, never>; // 空对象
+}
+
+// 服务器到客户端消息类型
+export interface MessageNewEvent extends WebSocketMessage {
+  type: 'message.new';
+  payload: {
+    message: {
+      id: number;
+      chat_id: number;
+      content: string;
+      message_type: string;
+      sender_id: number;
+      sender_type: 'official' | 'third_party';
+      created_at: string;
+      metadata: Record<string, unknown>;
+    };
+  };
+}
+
+export interface HistoryResponse extends WebSocketMessage {
+  type: 'history.response';
+  payload: {
+    messages: Array<{
+      id: number;
+      chat_id: number;
+      content: string;
+      message_type: string;
+      sender_id: number;
+      sender_type: 'official' | 'third_party';
+      created_at: string;
+      metadata: Record<string, unknown>;
+    }>;
+  };
+}
+
+export interface TypingUpdateEvent extends WebSocketMessage {
+  type: 'typing.update';
+  payload: {
+    sender: {
+      user_id: number;
+      client_id: string;
+      user_type: 'official' | 'third_party';
+    };
+    is_typing: boolean;
+  };
+}
+
+export interface MessageReadUpdateEvent extends WebSocketMessage {
+  type: 'message.read.update';
+  payload: {
+    sender: {
+      user_id: number;
+      client_id: string;
+      user_type: 'official' | 'third_party';
+    };
+    message_ids: number[];
+  };
+}
+
+export interface SystemNotificationEvent extends WebSocketMessage {
+  type: 'notification.system';
+  payload: {
+    level: 'info' | 'warning' | 'error';
+    content: string;
+  };
+}
+
+export interface ErrorResponse extends WebSocketMessage {
+  type: 'response.error';
+  payload: {
+    code: string;
+    message: string;
+  };
+}
+
+export interface MembersResponse extends WebSocketMessage {
+  type: 'members.response';
+  payload: {
+    members: string[];
+    count: number;
+  };
+}

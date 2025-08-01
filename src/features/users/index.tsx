@@ -9,12 +9,16 @@ import { useToast } from '@/hooks/use-toast'
 import { CreateUserDialog } from './components/create-user-dialog'
 import { UsersTable } from './components/users-table'
 import { Pagination } from './components/pagination'
+import { UserActivityMonitor } from './components/user-activity-monitor'
+import { BulkUserOperations } from './components/bulk-user-operations'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export default function UsersPage() {
   const navigate = useNavigate()
   const { toast } = useToast()
   const { user } = useAuth()
   const [page, setPage] = useState(1)
+  const [selectedUsers, setSelectedUsers] = useState<number[]>([])
   const pageSize = 10
 
   // 检查是否是管理员
@@ -34,42 +38,59 @@ export default function UsersPage() {
   // 更新用户状态
   const handleUpdateStatus = async (userId: number, is_active: boolean) => {
     try {
-      await adminService.updateUserStatus(userId, is_active)
+      await adminService.updateUserStatus(userId, { is_active })
       toast({
         title: '更新成功',
         description: `用户已${is_active ? '启用' : '禁用'}`,
       })
       refetch()
-    } catch {
-      // 错误已经在拦截器中处理
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: '更新失败',
+        description: error instanceof Error ? error.message : '操作失败，请稍后重试',
+      })
     }
   }
 
   // 更新用户管理员权限
   const handleUpdateAdmin = async (userId: number, is_admin: boolean) => {
     try {
-      await adminService.updateUserAdmin(userId, is_admin)
+      await adminService.updateUserAdmin(userId, { is_admin })
       toast({
         title: '更新成功',
         description: `用户已${is_admin ? '设为管理员' : '取消管理员权限'}`,
       })
       refetch()
-    } catch {
-      // 错误已经在拦截器中处理
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: '更新失败',
+        description: error instanceof Error ? error.message : '操作失败，请稍后重试',
+      })
     }
   }
 
   // 重置用户密钥对
   const handleResetKeys = async (userId: number) => {
     try {
-      await adminService.resetUserKeys(userId)
+      const response = await adminService.resetUserKeys(userId)
       toast({
         title: '重置成功',
-        description: '用户密钥对已重置',
+        description: '用户密钥对已重置，新密钥已生成',
       })
       refetch()
-    } catch {
-      // 错误已经在拦截器中处理
+      
+      // 如果需要，可以显示新密钥信息
+      if (response.data) {
+        console.log('New keys generated for user:', userId)
+      }
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: '重置失败',
+        description: error instanceof Error ? error.message : '密钥重置失败，请稍后重试',
+      })
     }
   }
 
@@ -84,23 +105,47 @@ export default function UsersPage() {
         <CreateUserDialog onSuccess={refetch} />
       </div>
 
-      {usersData?.data.items && (
-        <UsersTable
-          users={usersData.data.items}
-          onUpdateStatus={handleUpdateStatus}
-          onUpdateAdmin={handleUpdateAdmin}
-          onResetKeys={handleResetKeys}
-        />
-      )}
+      <Tabs defaultValue="users" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="users">用户列表</TabsTrigger>
+          <TabsTrigger value="activity">活动监控</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="users" className="space-y-6">
+          {usersData?.data.items && (
+            <>
+              <BulkUserOperations
+                users={usersData.data.items}
+                selectedUsers={selectedUsers}
+                onSelectionChange={setSelectedUsers}
+                onOperationComplete={refetch}
+              />
+              
+              <UsersTable
+                users={usersData.data.items}
+                selectedUsers={selectedUsers}
+                onSelectionChange={setSelectedUsers}
+                onUpdateStatus={handleUpdateStatus}
+                onUpdateAdmin={handleUpdateAdmin}
+                onResetKeys={handleResetKeys}
+              />
+            </>
+          )}
 
-      {usersData?.data.pagination && (
-        <Pagination
-          page={page}
-          pageSize={pageSize}
-          total={usersData.data.pagination.total}
-          onPageChange={setPage}
-        />
-      )}
+          {usersData?.data.pagination && (
+            <Pagination
+              page={page}
+              pageSize={pageSize}
+              total={usersData.data.pagination.total}
+              onPageChange={setPage}
+            />
+          )}
+        </TabsContent>
+        
+        <TabsContent value="activity">
+          <UserActivityMonitor />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

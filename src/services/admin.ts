@@ -24,6 +24,11 @@ import {
   KnowledgeBaseTrainResponse,
   KnowledgeBaseQueryRequest,
   KnowledgeBaseQueryResponse,
+  Chat,
+  ChatMessage,
+  ChatMessageCreate,
+  GetChatsQuery,
+  ChatStats,
 } from './types'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
@@ -331,15 +336,43 @@ class AdminService {
     return response.data
   }
 
-  // 创建文档
-  async createDocument(
+  // 创建文本文档
+  async createTextDocument(
     data: CreateDocumentRequest,
     knowledgeBaseId: number
   ): Promise<ApiResponse<Document>> {
     const response = await axios.post<ApiResponse<Document>>(
-      `${this.baseUrl}/api/v1/admin/knowledge-bases/${knowledgeBaseId}/documents`,
+      `${this.baseUrl}/api/v1/admin/documents/knowledge-bases/${knowledgeBaseId}/documents/text`,
       data,
       { headers: this.getHeaders() }
+    )
+    return response.data
+  }
+
+  // 上传文件创建文档
+  async uploadDocument(
+    file: File,
+    knowledgeBaseId: number,
+    onProgress?: (progress: number) => void
+  ): Promise<ApiResponse<Document>> {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await axios.post<ApiResponse<Document>>(
+      `${this.baseUrl}/api/v1/admin/documents/knowledge-bases/${knowledgeBaseId}/documents/upload`,
+      formData,
+      {
+        headers: {
+          ...this.getHeaders(),
+          'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total && onProgress) {
+            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+            onProgress(progress)
+          }
+        },
+      }
     )
     return response.data
   }
@@ -387,6 +420,16 @@ class AdminService {
     return response.data
   }
 
+  // 重新处理文档
+  async reprocessDocument(docId: number): Promise<ApiResponse<Document>> {
+    const response = await axios.post<ApiResponse<Document>>(
+      `${this.baseUrl}/api/v1/admin/documents/${docId}/reprocess`,
+      {},
+      { headers: this.getHeaders() }
+    )
+    return response.data
+  }
+
   // 修改密码
   async updatePassword(data: UpdatePasswordRequest): Promise<ApiResponse> {
     const response = await axios.put<ApiResponse>(
@@ -408,6 +451,176 @@ class AdminService {
       { headers: this.getHeaders() }
     )
     return response.data
+  }
+
+  // 聊天管理相关接口
+
+  // 聊天管理相关接口 (基于实际API文档)
+
+  // 获取聊天列表
+  async getChats(params: GetChatsQuery): Promise<ApiResponse<PaginationData<Chat>>> {
+    const response = await axios.get<ApiResponse<PaginationData<Chat>>>(
+      `${this.baseUrl}/api/v1/chat/admin`,
+      {
+        params: {
+          skip: params.skip,
+          limit: params.limit,
+          include_inactive: params.include_inactive,
+          all_chats: params.all_chats,
+          user_id: params.user_id,
+          knowledge_base_id: params.knowledge_base_id,
+          status: params.status,
+        },
+        headers: this.getHeaders(),
+      }
+    )
+    return response.data
+  }
+
+  // 获取聊天详情
+  async getChatDetail(chatId: number): Promise<ApiResponse<Chat>> {
+    const response = await axios.get<ApiResponse<Chat>>(
+      `${this.baseUrl}/api/v1/chat/admin/${chatId}`,
+      { headers: this.getHeaders() }
+    )
+    return response.data
+  }
+
+  // 获取聊天消息列表
+  async getChatMessages(chatId: number, skip?: number, limit?: number): Promise<ApiResponse<ChatMessage[]>> {
+    const response = await axios.get<ApiResponse<ChatMessage[]>>(
+      `${this.baseUrl}/api/v1/chat/admin/${chatId}/messages`,
+      {
+        params: { skip, limit },
+        headers: this.getHeaders(),
+      }
+    )
+    return response.data
+  }
+
+  // 发送聊天消息
+  async sendChatMessage(chatId: number, data: ChatMessageCreate): Promise<ApiResponse<ChatMessage>> {
+    const response = await axios.post<ApiResponse<ChatMessage>>(
+      `${this.baseUrl}/api/v1/chat/admin/${chatId}/messages`,
+      data,
+      { headers: this.getHeaders() }
+    )
+    return response.data
+  }
+
+  // 切换聊天模式
+  async switchChatMode(chatId: number, mode: string): Promise<ApiResponse<null>> {
+    const response = await axios.post<ApiResponse<null>>(
+      `${this.baseUrl}/api/v1/chat/admin/${chatId}/switch-mode`,
+      {},
+      {
+        params: { mode },
+        headers: this.getHeaders(),
+      }
+    )
+    return response.data
+  }
+
+  // 加入聊天
+  async joinChat(chatId: number): Promise<ApiResponse<null>> {
+    const response = await axios.post<ApiResponse<null>>(
+      `${this.baseUrl}/api/v1/chat/admin/${chatId}/join`,
+      {},
+      { headers: this.getHeaders() }
+    )
+    return response.data
+  }
+
+  // 离开聊天
+  async leaveChat(chatId: number): Promise<ApiResponse<null>> {
+    const response = await axios.post<ApiResponse<null>>(
+      `${this.baseUrl}/api/v1/chat/admin/${chatId}/leave`,
+      {},
+      { headers: this.getHeaders() }
+    )
+    return response.data
+  }
+
+  // 恢复聊天
+  async restoreChat(chatId: number): Promise<ApiResponse<null>> {
+    const response = await axios.post<ApiResponse<null>>(
+      `${this.baseUrl}/api/v1/chat/admin/${chatId}/restore`,
+      {},
+      { headers: this.getHeaders() }
+    )
+    return response.data
+  }
+
+  // 获取已删除的聊天列表
+  async getDeletedChats(skip?: number, limit?: number): Promise<ApiResponse<PaginationData<Chat>>> {
+    const response = await axios.get<ApiResponse<PaginationData<Chat>>>(
+      `${this.baseUrl}/api/v1/chat/admin/deleted`,
+      {
+        params: { skip, limit },
+        headers: this.getHeaders(),
+      }
+    )
+    return response.data
+  }
+
+  // 获取用户聊天统计
+  async getUserChatStats(thirdPartyUserId: number): Promise<ApiResponse<ChatStats>> {
+    const response = await axios.get<ApiResponse<ChatStats>>(
+      `${this.baseUrl}/api/v1/chat/admin/users/${thirdPartyUserId}/stats`,
+      { headers: this.getHeaders() }
+    )
+    return response.data
+  }
+
+  // 获取知识库聊天统计
+  async getKnowledgeBaseChatStats(kbId: number): Promise<ApiResponse<ChatStats>> {
+    const response = await axios.get<ApiResponse<ChatStats>>(
+      `${this.baseUrl}/api/v1/chat/admin/knowledge-bases/${kbId}/stats`,
+      { headers: this.getHeaders() }
+    )
+    return response.data
+  }
+
+  // WebSocket 连接管理 (基于实际API端点)
+  createChatWebSocket(chatId: number, adminId: number, clientId: string): WebSocket {
+    const wsUrl = this.baseUrl.replace('http', 'ws')
+    const params = new URLSearchParams({
+      client_id: clientId,
+      admin_id: adminId.toString(),
+    })
+    
+    // 实际的管理端WebSocket端点
+    const ws = new WebSocket(`${wsUrl}/api/v1/ws/admin/${chatId}?${params}`)
+    
+    ws.onopen = () => {
+      // eslint-disable-next-line no-console
+      console.log(`Admin WebSocket connected to chat ${chatId}`)
+    }
+    
+    ws.onerror = (error) => {
+      // eslint-disable-next-line no-console
+      console.error('WebSocket error:', error)
+      toast({
+        title: 'WebSocket连接错误',
+        description: '实时聊天连接失败，请刷新页面重试',
+        variant: 'destructive',
+      })
+    }
+    
+    ws.onclose = (event) => {
+      // eslint-disable-next-line no-console
+      console.log('WebSocket closed:', event.code, event.reason)
+      if (event.code !== 1000) {
+        // 非正常关闭，显示错误信息
+        toast({
+          title: 'WebSocket连接断开',
+          description: '实时聊天连接已断开，正在尝试重连...',
+          variant: 'destructive',
+        })
+      }
+    }
+    
+    return ws
   }
 }
 

@@ -1,4 +1,5 @@
-import { Key, MoreHorizontal, Power, Shield, RefreshCw } from 'lucide-react'
+import { Key, MoreHorizontal, Power, Shield, RefreshCw, BarChart3 } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Table,
   TableBody,
@@ -23,9 +24,12 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import type { User } from '@/services/types'
 import { UpdatePasswordDialog } from './update-password-dialog'
+import { UserStatsDialog } from './user-stats-dialog'
 
 interface UsersTableProps {
   users: User[]
+  selectedUsers?: number[]
+  onSelectionChange?: (selectedUsers: number[]) => void
   onUpdateStatus: (userId: number, is_active: boolean) => Promise<void>
   onUpdateAdmin: (userId: number, is_admin: boolean) => Promise<void>
   onResetKeys: (userId: number) => Promise<void>
@@ -33,15 +37,32 @@ interface UsersTableProps {
 
 export function UsersTable({
   users,
+  selectedUsers = [],
+  onSelectionChange,
   onUpdateStatus,
   onUpdateAdmin,
   onResetKeys,
 }: UsersTableProps) {
+  
+  const handleUserSelection = (userId: number, checked: boolean) => {
+    if (!onSelectionChange) return
+    
+    if (checked) {
+      onSelectionChange([...selectedUsers, userId])
+    } else {
+      onSelectionChange(selectedUsers.filter(id => id !== userId))
+    }
+  }
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
+            {onSelectionChange && (
+              <TableHead className="w-[50px]">
+                <span className="sr-only">选择</span>
+              </TableHead>
+            )}
             <TableHead className="w-[60px]">ID</TableHead>
             <TableHead className="w-[180px]">邮箱</TableHead>
             <TableHead className="w-[100px]">角色</TableHead>
@@ -79,7 +100,7 @@ export function UsersTable({
         <TableBody>
           {users.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="h-24 text-center">
+              <TableCell colSpan={onSelectionChange ? 9 : 8} className="h-24 text-center">
                 <div className="flex flex-col items-center justify-center text-sm text-muted-foreground">
                   <p>暂无用户数据</p>
                   <p>点击右上角"创建用户"按钮添加新用户</p>
@@ -89,6 +110,16 @@ export function UsersTable({
           ) : (
             users.map((user) => (
               <TableRow key={user.id}>
+                {onSelectionChange && (
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedUsers.includes(user.id)}
+                      onCheckedChange={(checked) => 
+                        handleUserSelection(user.id, checked as boolean)
+                      }
+                    />
+                  </TableCell>
+                )}
                 <TableCell>{user.id}</TableCell>
                 <TableCell className="truncate max-w-[180px]">
                   <span className="truncate">{user.email}</span>
@@ -161,6 +192,12 @@ export function UsersTable({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <UserStatsDialog user={user}>
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                          <BarChart3 className="mr-2 h-4 w-4" />
+                          查看统计
+                        </DropdownMenuItem>
+                      </UserStatsDialog>
                       <UpdatePasswordDialog userId={user.id}>
                         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                           <Key className="mr-2 h-4 w-4" />

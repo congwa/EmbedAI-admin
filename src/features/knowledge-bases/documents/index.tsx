@@ -34,6 +34,10 @@ import { ArrowLeft, Plus, Search } from 'lucide-react'
 import { Document, DocumentType, CreateDocumentRequest, UpdateDocumentRequest } from '@/services/types'
 import { DocumentEditDialog } from './document-edit-dialog'
 import { DocumentPagination } from './document-pagination'
+import { DocumentUpload } from './document-upload'
+import { KnowledgeBaseQuery } from '../components/knowledge-base-query'
+import { KnowledgeBaseTraining } from '../components/knowledge-base-training'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export function KnowledgeBaseDocumentsPage() {
   const { id } = useParams({ from: '/_authenticated/knowledge-bases/$id/documents/' })
@@ -41,11 +45,14 @@ export function KnowledgeBaseDocumentsPage() {
   const [searchParams, setSearchParams] = useState({
     title: '',
     doc_type: undefined as DocumentType | undefined,
+    start_time: '',
+    end_time: '',
   })
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
   const [selectedDocument, setSelectedDocument] = useState<Document>()
 
   // 获取知识库信息
@@ -65,6 +72,8 @@ export function KnowledgeBaseDocumentsPage() {
         limit: pageSize,
         title: searchParams.title || undefined,
         doc_type: searchParams.doc_type,
+        start_time: searchParams.start_time || undefined,
+        end_time: searchParams.end_time || undefined,
       }),
     enabled: !!id,
   })
@@ -78,6 +87,8 @@ export function KnowledgeBaseDocumentsPage() {
     setSearchParams({
       title: '',
       doc_type: undefined,
+      start_time: '',
+      end_time: '',
     })
     setPage(1)
     refetch()
@@ -91,7 +102,7 @@ export function KnowledgeBaseDocumentsPage() {
           title: '更新文档成功',
         })
       } else {
-        await adminService.createDocument(values as CreateDocumentRequest, Number(id))
+        await adminService.createTextDocument(values as CreateDocumentRequest, Number(id))
         toast({
           title: '创建文档成功',
         })
@@ -125,6 +136,23 @@ export function KnowledgeBaseDocumentsPage() {
     }
   }
 
+  const handleReprocess = async (document: Document) => {
+    try {
+      await adminService.reprocessDocument(document.id)
+      toast({
+        title: '重新处理成功',
+        description: `${document.title} 已开始重新处理`,
+      })
+      refetch()
+    } catch (_error) {
+      toast({
+        variant: 'destructive',
+        title: '重新处理失败',
+        description: '请稍后重试',
+      })
+    }
+  }
+
   const handlePageChange = (newPage: number) => {
     setPage(newPage)
   }
@@ -143,56 +171,101 @@ export function KnowledgeBaseDocumentsPage() {
           </Button>
         </Link>
         <h1 className="text-2xl font-bold">
-          {knowledgeBase?.data.name} - 文档管理
+          {knowledgeBase?.data.name}
         </h1>
       </div>
 
-      <div className="flex items-center gap-4 mb-6">
-        <div className="flex-1">
-          <Input
-            placeholder="搜索文档标题"
-            value={searchParams.title}
-            onChange={(e) =>
-              setSearchParams((prev) => ({ ...prev, title: e.target.value }))
+      <Tabs defaultValue="documents" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="documents">文档管理</TabsTrigger>
+          <TabsTrigger value="training">训练管理</TabsTrigger>
+          <TabsTrigger value="query">查询测试</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="documents" className="space-y-6">
+
+      <div className="space-y-4 mb-6">
+        <div className="flex items-center gap-4">
+          <div className="flex-1">
+            <Input
+              placeholder="搜索文档标题"
+              value={searchParams.title}
+              onChange={(e) =>
+                setSearchParams((prev) => ({ ...prev, title: e.target.value }))
+              }
+            />
+          </div>
+          <Select
+            value={searchParams.doc_type}
+            onValueChange={(value) =>
+              setSearchParams((prev) => ({
+                ...prev,
+                doc_type: value as DocumentType | undefined,
+              }))
             }
-          />
+          >
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="文档类型" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">全部</SelectItem>
+              <SelectItem value={DocumentType.TEXT}>文本</SelectItem>
+              <SelectItem value={DocumentType.WEBPAGE}>网页</SelectItem>
+              <SelectItem value={DocumentType.PDF}>PDF</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={handleSearch} className="flex items-center gap-2">
+            <Search className="h-4 w-4" />
+            搜索
+          </Button>
+          <Button variant="outline" onClick={handleReset}>
+            重置
+          </Button>
         </div>
-        <Select
-          value={searchParams.doc_type}
-          onValueChange={(value) =>
-            setSearchParams((prev) => ({
-              ...prev,
-              doc_type: value as DocumentType | undefined,
-            }))
-          }
-        >
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="文档类型" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">全部</SelectItem>
-            <SelectItem value={DocumentType.TEXT}>文本</SelectItem>
-            <SelectItem value={DocumentType.WEBPAGE}>网页</SelectItem>
-            <SelectItem value={DocumentType.PDF}>PDF</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button onClick={handleSearch} className="flex items-center gap-2">
-          <Search className="h-4 w-4" />
-          搜索
-        </Button>
-        <Button variant="outline" onClick={handleReset}>
-          重置
-        </Button>
-        <Button
-          onClick={() => {
-            setSelectedDocument(undefined)
-            setEditDialogOpen(true)
-          }}
-          className="flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          创建文档
-        </Button>
+        
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium">创建时间:</label>
+            <Input
+              type="date"
+              value={searchParams.start_time}
+              onChange={(e) =>
+                setSearchParams((prev) => ({ ...prev, start_time: e.target.value }))
+              }
+              className="w-[150px]"
+            />
+            <span className="text-sm text-muted-foreground">至</span>
+            <Input
+              type="date"
+              value={searchParams.end_time}
+              onChange={(e) =>
+                setSearchParams((prev) => ({ ...prev, end_time: e.target.value }))
+              }
+              className="w-[150px]"
+            />
+          </div>
+          
+          <div className="ml-auto flex gap-2">
+            <Button
+              onClick={() => setUploadDialogOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              上传文档
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSelectedDocument(undefined)
+                setEditDialogOpen(true)
+              }}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              创建文本
+            </Button>
+          </div>
+        </div>
       </div>
 
       <Table>
@@ -229,27 +302,36 @@ export function KnowledgeBaseDocumentsPage() {
                   {new Date(doc.created_at).toLocaleString()}
                 </TableCell>
                 <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedDocument(doc)
-                      setEditDialogOpen(true)
-                    }}
-                  >
-                    编辑
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-500"
-                    onClick={() => {
-                      setSelectedDocument(doc)
-                      setDeleteDialogOpen(true)
-                    }}
-                  >
-                    删除
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedDocument(doc)
+                        setEditDialogOpen(true)
+                      }}
+                    >
+                      编辑
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleReprocess(doc)}
+                    >
+                      重新处理
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-500"
+                      onClick={() => {
+                        setSelectedDocument(doc)
+                        setDeleteDialogOpen(true)
+                      }}
+                    >
+                      删除
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))
@@ -266,6 +348,16 @@ export function KnowledgeBaseDocumentsPage() {
           onPageSizeChange={handlePageSizeChange}
         />
       )}
+
+      <DocumentUpload
+        knowledgeBaseId={Number(id)}
+        open={uploadDialogOpen}
+        onOpenChange={setUploadDialogOpen}
+        onUploadComplete={() => {
+          refetch()
+          setUploadDialogOpen(false)
+        }}
+      />
 
       <DocumentEditDialog
         open={editDialogOpen}
@@ -288,6 +380,31 @@ export function KnowledgeBaseDocumentsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+        </TabsContent>
+        
+        <TabsContent value="training">
+          {knowledgeBase?.data && (
+            <KnowledgeBaseTraining
+              knowledgeBaseId={Number(id)}
+              knowledgeBaseName={knowledgeBase.data.name}
+              currentStatus={knowledgeBase.data.status}
+              onStatusChange={(status) => {
+                // 可以在这里处理状态变化，比如刷新数据
+                
+              }}
+            />
+          )}
+        </TabsContent>
+        
+        <TabsContent value="query">
+          {knowledgeBase?.data && (
+            <KnowledgeBaseQuery
+              knowledgeBaseId={Number(id)}
+              knowledgeBaseName={knowledgeBase.data.name}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   )
 } 
