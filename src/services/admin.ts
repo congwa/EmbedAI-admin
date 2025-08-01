@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { useAuthStore } from '@/stores/authStore'
 import { toast } from '@/hooks/use-toast'
+import { withRetry } from '@/utils/retry'
 import {
   AdminLoginRequest,
   AdminRegisterRequest,
@@ -172,12 +173,14 @@ class AdminService {
 
   // 创建普通用户
   async createUser(data: CreateUserRequest): Promise<ApiResponse<User>> {
-    const response = await axios.post<ApiResponse<User>>(
-      `${this.baseUrl}/api/v1/admin/users`,
-      data,
-      { headers: this.getHeaders() }
-    )
-    return response.data
+    return withRetry(async () => {
+      const response = await axios.post<ApiResponse<User>>(
+        `${this.baseUrl}/api/v1/admin/users`,
+        data,
+        { headers: this.getHeaders() }
+      )
+      return response.data
+    }, { maxRetries: 2 })
   }
 
   // 获取普通用户列表
@@ -197,12 +200,14 @@ class AdminService {
 
   // 修改用户状态
   async updateUserStatus(userId: number, is_active: boolean): Promise<ApiResponse<User>> {
-    const response = await axios.put<ApiResponse<User>>(
-      `${this.baseUrl}/api/v1/admin/users/${userId}/status`,
-      { is_active },
-      { headers: this.getHeaders() }
-    )
-    return response.data
+    return withRetry(async () => {
+      const response = await axios.put<ApiResponse<User>>(
+        `${this.baseUrl}/api/v1/admin/users/${userId}/status`,
+        { is_active },
+        { headers: this.getHeaders() }
+      )
+      return response.data
+    }, { maxRetries: 2 })
   }
 
   // 修改用户管理员权限
@@ -217,12 +222,14 @@ class AdminService {
 
   // 重置用户密钥对
   async resetUserKeys(userId: number): Promise<ApiResponse<User>> {
-    const response = await axios.post<ApiResponse<User>>(
-      `${this.baseUrl}/api/v1/admin/users/${userId}/reset-keys`,
-      {},
-      { headers: this.getHeaders() }
-    )
-    return response.data
+    return withRetry(async () => {
+      const response = await axios.post<ApiResponse<User>>(
+        `${this.baseUrl}/api/v1/admin/users/${userId}/reset-keys`,
+        {},
+        { headers: this.getHeaders() }
+      )
+      return response.data
+    }, { maxRetries: 2 })
   }
 
   // 知识库管理相关接口
@@ -300,12 +307,14 @@ class AdminService {
   }
 
   async trainKnowledgeBase(id: number): Promise<ApiResponse<KnowledgeBaseTrainResponse>> {
-    const response = await axios.post<ApiResponse<KnowledgeBaseTrainResponse>>(
-      `${this.baseUrl}/api/v1/admin/knowledge-bases/${id}/train`,
-      {},
-      { headers: this.getHeaders() }
-    )
-    return response.data
+    return withRetry(async () => {
+      const response = await axios.post<ApiResponse<KnowledgeBaseTrainResponse>>(
+        `${this.baseUrl}/api/v1/admin/knowledge-bases/${id}/train`,
+        {},
+        { headers: this.getHeaders() }
+      )
+      return response.data
+    }, { maxRetries: 3, retryDelay: 2000 }) // 训练操作使用更长的重试间隔
   }
 
   async queryKnowledgeBase(
